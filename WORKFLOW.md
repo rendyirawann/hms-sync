@@ -46,19 +46,20 @@ Untuk menjaga konsistensi dan pengalaman pengguna yang modern di area dashboard 
    - **Modal Detail (Show/Lihat):** Harus tetap muncul secara klasik di **tengah** layar (Centered modal).
 
 ## 5. Roadmap & Status Pengerjaan
-- [x] **Database Foundation:** Skema Hotels, RoomTypes, Rooms, Shifts, Bookings, Reservations, EmployeeShifts (catatan: hanya `users` yang UUID; tabel HMS memakai ID auto-increment).
-- [x] **Frontend UI:** Landing page Tailwind CSS v4, kini memakai data hotel & tipe kamar dari database.
-- [x] **Layout Admin:** Diganti ke versi template `startertempalt` (app-shell, security headers, rate limit, branding).
-- [x] **Standarisasi UI Backend:** `public/assets/js/hms-admin.js` — SweetAlert global (termasuk detail error validasi), spinner di setiap tombol submit, form Tambah/Edit sebagai drawer kanan (`<x-hms.drawer>`), detail di modal tengah (`data-hms-show`).
-- [x] **Sistem Autentikasi Customer:** Register → email aktivasi → login (akun belum aktif ditolak, ada kirim ulang aktivasi). Role `Customer` tidak bisa masuk panel admin.
-- [x] **Modul Manajemen Kamar:** Profil hotel, CRUD Tipe Kamar (foto, harga, fasilitas), CRUD Kamar + status housekeeping.
-- [x] **Modul Booking Engine:** Cek ketersediaan per tipe kamar (anti double-booking), buat reservasi, "Reservasi Saya", batal oleh tamu (status Pending).
-- [x] **Reservasi & Check-in (admin):** Tandai lunas, konfirmasi, batal, check-in (pilih kamar + passcode pintu 6 digit otomatis), passcode ulang, check-out (kamar → Cleaning).
-- [x] **Modul Pegawai & Shift:** CRUD Pegawai, Master Shift, Jadwal mingguan, Shift Saya (clock-in/clock-out).
-- [ ] **Pembayaran online** (payment gateway) — saat ini pelunasan ditandai manual oleh admin.
-- [ ] **Notifikasi email** ke tamu saat booking dikonfirmasi / check-in (berisi passcode).
-- [ ] **Booking walk-in** dibuat langsung oleh resepsionis dari panel admin.
-- [ ] **Laporan** okupansi & pendapatan di dashboard.
+- [x] Database foundation, landing page, layout admin (template startertempalt), standar UI backend.
+- [x] Autentikasi customer: registrasi, aktivasi email, kirim ulang aktivasi, profil customer.
+- [x] Manajemen kamar: profil hotel, tipe kamar, kamar, galeri foto.
+- [x] Booking engine: ketersediaan per tipe kamar (anti double-booking), harga dinamis, kode promo, pajak & service.
+- [x] Pembayaran: Tripay (callback ber-signature) + transfer manual dengan verifikasi + tunai di front desk.
+- [x] Otomatis: booking tidak dibayar kedaluwarsa, no-show, backup harian.
+- [x] Front desk: walk-in, konfirmasi, check-in + kode pintu terenkripsi, folio, perpanjang, pindah kamar, check-out, invoice PDF.
+- [x] Housekeeping board, kalender okupansi.
+- [x] Pegawai & shift: jadwal, clock-in/out dengan batas IP/GPS, rekap kehadiran (CSV).
+- [x] Laporan: okupansi, ADR, RevPAR, pendapatan.
+- [x] Ulasan tamu, notifikasi email (queue), audit log, test otomatis, git.
+- [ ] Driver smart lock vendor (TTLock/Nuki) — antarmuka `App\Services\DoorLock\DoorLock` sudah siap.
+- [ ] Event realtime via Reverb (booking baru / status kamar) — fondasi Reverb sudah terpasang.
+- [ ] Migrasi infrastruktur ke Redis + Octane (lihat docs/DEPLOYMENT.md).
 
 ## 6. Hak Akses HMS
 | Permission | Superadmin | admin | Pegawai | Customer |

@@ -2,48 +2,51 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
-use Illuminate\Support\Facades\Hash;
 
 class SuperAdminSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Creates the first Superadmin. Credentials come from SUPERADMIN_EMAIL /
+     * SUPERADMIN_PASSWORD; without a password a random one is generated and
+     * printed once, so no default password ever ships in the repository.
      */
     public function run(): void
     {
-        // 1. Reset Cached Roles/Permissions (Wajib agar tidak error cache)
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // 2. Buat Role 'Superadmin' jika belum ada
-        $role = Role::firstOrCreate(
-            ['name' => 'Superadmin', 'guard_name' => 'web']
-        );
+        $role = Role::firstOrCreate(['name' => 'Superadmin', 'guard_name' => 'web']);
 
-        // 3. Buat User Superadmin
-        // Di dalam file SuperAdminSeeder.php bagian create user
-        $user = User::firstOrCreate(
-            ['email' => 'superadmin@gmail.com'],
-            [
-                'name'              => 'Super Administrator',
-                'username'          => 'superadmin', // Pastikan username diisi
-                'password'          => Hash::make('12qwaszx123!!@@##'),
-                'no_wa'             => '08123456789',
-                'email_verified_at' => now(),
-                'is_active'         => true,
-            ]
-        );
+        $email = env('SUPERADMIN_EMAIL', 'superadmin@example.com');
+        $password = env('SUPERADMIN_PASSWORD') ?: Str::password(16);
 
-        // 4. Assign Role Superadmin ke User tersebut
-        if (!$user->hasRole('Superadmin')) {
-            $user->assignRole($role);
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            $this->command?->info("Superadmin {$email} sudah ada; password tidak diubah.");
+        } else {
+            // 'password' is hashed by the model cast.
+            $user = User::create([
+                'name' => 'Super Administrator',
+                'username' => 'superadmin',
+                'email' => $email,
+                'password' => $password,
+                'is_active' => true,
+            ]);
+            $user->forceFill(['email_verified_at' => now()])->save();
+
+            $this->command?->info('Superadmin dibuat.');
+            $this->command?->info("Email   : {$email}");
+            if (! env('SUPERADMIN_PASSWORD')) {
+                $this->command?->warn("Password: {$password}  (simpan sekarang, tidak ditampilkan lagi)");
+            }
         }
 
-        $this->command->info('User Superadmin berhasil dibuat!');
-        $this->command->info('Email: superadmin@gmail.com');
-        $this->command->info('Pass : 12qwaszx123!!@@##');
+        if (! $user->hasRole('Superadmin')) {
+            $user->assignRole($role);
+        }
     }
 }
