@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.1",
         "cybercog/laravel-ban": "^4.10",
         "jenssegers/agent": "^2.6",
         "laravel/framework": "^12.0",
@@ -19,6 +20,7 @@
         "ramsey/uuid": "^4.9",
         "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-activitylog": "^4.11",
+        "spatie/laravel-backup": "^10.3",
         "spatie/laravel-permission": "^6.24",
         "spiral/roadrunner-cli": "^2.7",
         "spiral/roadrunner-http": "^3.6",
