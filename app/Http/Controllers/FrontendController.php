@@ -46,7 +46,7 @@ class FrontendController extends Controller
             'check_in' => ['required', 'date', 'after_or_equal:today'],
             'check_out' => ['required', 'date', 'after:check_in', 'before_or_equal:' . now()->addYear()->toDateString()],
             'guests' => ['nullable', 'integer', 'min:1', 'max:20'],
-        ], [], ['check_in' => 'tanggal check-in', 'check_out' => 'tanggal check-out', 'guests' => 'jumlah tamu']);
+        ], ['check_in.after_or_equal' => 'Tanggal check-in tidak boleh sebelum hari ini.'], ['check_in' => 'tanggal check-in', 'check_out' => 'tanggal check-out', 'guests' => 'jumlah tamu']);
 
         $checkIn = Carbon::parse($data['check_in']);
         $checkOut = Carbon::parse($data['check_out']);

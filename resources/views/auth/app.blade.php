@@ -86,21 +86,21 @@
             </a>
 
             <div>
-                <h1 class="auth-story__headline">Kelola operasional dalam satu panel.</h1>
+                <h1 class="auth-story__headline">Menginap mudah, operasional rapi.</h1>
                 <p class="auth-story__lead">{{ $brand['description'] }}</p>
 
                 <ul class="auth-story__points">
                     <li>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Manajemen pengguna, peran, dan hak akses granular
+                        Pesan kamar online, bayar via transfer atau Tripay
                     </li>
                     <li>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Jejak audit lengkap untuk setiap perubahan data
+                        Kode pintu kamar langsung di ponsel saat check-in
                     </li>
                     <li>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Sesi login terpantau dengan proteksi berlapis
+                        Front desk, housekeeping &amp; laporan dalam satu panel
                     </li>
                 </ul>
             </div>

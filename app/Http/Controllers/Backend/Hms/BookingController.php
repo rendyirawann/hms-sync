@@ -87,7 +87,7 @@ class BookingController extends Controller
             'guest_email' => ['nullable', 'email', 'max:255'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'promo_code' => ['nullable', 'string', 'max:40'],
-        ], [], [
+        ], ['check_in.after_or_equal' => 'Tanggal check-in tidak boleh sebelum hari ini.'], [
             'room_type_id' => 'tipe kamar', 'check_in' => 'tanggal check-in', 'check_out' => 'tanggal check-out',
             'guests' => 'jumlah tamu', 'guest_name' => 'nama tamu', 'guest_phone' => 'telepon', 'guest_email' => 'email',
         ]);

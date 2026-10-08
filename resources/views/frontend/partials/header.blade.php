@@ -4,7 +4,7 @@
             <div class="flex items-center justify-between h-20">
                 <a href="{{ route('landing') }}" class="flex items-center gap-3">
                     <img src="{{ asset('assets/media/landing/logo-landing.png') }}" alt="" class="h-10 w-auto">
-                    <span class="text-xl font-extrabold tracking-tight text-[#001e3c] truncate max-w-[12rem]">{{ $hotel->name ?? 'HMS' }}</span>
+                    <span class="text-xl font-extrabold tracking-tight text-[#001e3c] truncate max-w-[10rem] sm:max-w-[16rem] lg:max-w-[22rem]">{{ $hotel->name ?? 'HMS' }}</span>
                 </a>
 
                 <nav class="hidden lg:flex items-center gap-8">

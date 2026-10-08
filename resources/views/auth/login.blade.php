@@ -48,7 +48,7 @@
         </div>
 
         <h1 class="auth-card__title">Selamat datang kembali</h1>
-        <p class="auth-card__subtitle">Masuk untuk melanjutkan ke dashboard.</p>
+        <p class="auth-card__subtitle">Masuk untuk melihat reservasi Anda, atau ke panel hotel bagi staf.</p>
 
         {{-- Accounts previously used on THIS device. Only the identifier is
              kept (in localStorage) — never a password. Populated and rendered

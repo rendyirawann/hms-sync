@@ -97,7 +97,7 @@ class BookingController extends Controller
             'guest_phone' => ['required', 'string', 'max:30'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'promo_code' => ['nullable', 'string', 'max:40'],
-        ], [], [
+        ], ['check_in.after_or_equal' => 'Tanggal check-in tidak boleh sebelum hari ini.'], [
             'check_in' => 'tanggal check-in', 'check_out' => 'tanggal check-out',
             'guests' => 'jumlah tamu', 'guest_phone' => 'nomor telepon', 'notes' => 'catatan', 'promo_code' => 'kode promo',
         ]);

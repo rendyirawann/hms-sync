@@ -30,8 +30,8 @@ class SecurityHeaders
         $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin');
         $response->headers->set(
             'Permissions-Policy',
-            'accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), '
-            . 'geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=()'
+            'accelerometer=(self), autoplay=(), camera=(), display-capture=(), encrypted-media=(), '
+            . 'geolocation=(self), gyroscope=(self), magnetometer=(), microphone=(), midi=(), payment=(), usb=()'
         );
 
         // Hide server fingerprints where PHP lets us. X-Powered-By is added by
