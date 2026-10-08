@@ -3,6 +3,10 @@
      Local copies of pusher-js/echo, so the CSP never blocks them. --}}
 @php
     $reverb = config('broadcasting.connections.reverb');
+    $client = config('hms.reverb_client');
+    $reverb['options']['host'] = $client['host'] ?: ($reverb['options']['host'] ?? null);
+    $reverb['options']['port'] = $client['port'] ?: ($reverb['options']['port'] ?? 443);
+    $reverb['options']['scheme'] = $client['scheme'] ?: ($reverb['options']['scheme'] ?? 'https');
 @endphp
 @if (auth()->check() && config('broadcasting.default') === 'reverb' && ! empty($reverb['key']))
     <script src="{{ asset('assets/js/pusher.min.js') }}" defer></script>

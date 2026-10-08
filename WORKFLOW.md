@@ -57,9 +57,9 @@ Untuk menjaga konsistensi dan pengalaman pengguna yang modern di area dashboard 
 - [x] Pegawai & shift: jadwal, clock-in/out dengan batas IP/GPS, rekap kehadiran (CSV).
 - [x] Laporan: okupansi, ADR, RevPAR, pendapatan.
 - [x] Ulasan tamu, notifikasi email (queue), audit log, test otomatis, git.
-- [ ] Driver smart lock vendor (TTLock/Nuki) — antarmuka `App\Services\DoorLock\DoorLock` sudah siap.
-- [ ] Event realtime via Reverb (booking baru / status kamar) — fondasi Reverb sudah terpasang.
-- [ ] Migrasi infrastruktur ke Redis + Octane (lihat docs/DEPLOYMENT.md).
+- [x] Driver smart lock TTLock (kode diprogram saat check-in, dihapus saat check-out/pindah kamar).
+- [x] Realtime via Reverb: front desk, housekeeping, dan halaman reservasi tamu.
+- [x] Redis (cache/session/queue) + Laravel Octane (RoadRunner), image Docker & docker compose.
 
 ## 6. Hak Akses HMS
 | Permission | Superadmin | admin | Pegawai | Customer |

@@ -43,6 +43,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Realtime (Reverb) — what the BROWSER connects to
+    |--------------------------------------------------------------------------
+    | REVERB_HOST/PORT/SCHEME are what PHP uses to publish events (often an
+    | internal address such as 127.0.0.1:8080 or a container name). Browsers
+    | need the public address behind the proxy, e.g. hotel.example.com:443.
+    */
+    'reverb_client' => [
+        'host' => env('VITE_REVERB_HOST'),
+        'port' => env('VITE_REVERB_PORT'),
+        'scheme' => env('VITE_REVERB_SCHEME'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Housekeeping / no-show
     |--------------------------------------------------------------------------
     */

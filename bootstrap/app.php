@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             \App\Http\Middleware\SanitizeInput::class,
             \App\Http\Middleware\CheckMaintenanceMode::class,
+            \App\Http\Middleware\TrackOnlineUsers::class,
             'throttle:web',
         ]);
 

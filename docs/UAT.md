@@ -178,3 +178,25 @@ Akun demo (`php artisan db:seed --class=DemoSeeder`, password `Password123!`):
 - **Pengiriman email SMTP sungguhan:** di UAT, email ditulis ke log. Isi email aktivasi berhasil diverifikasi.
 - **Clock-in dengan GPS** di perangkat sungguhan (izin lokasi browser). Logika radius dan IP sudah diuji di test otomatis.
 - **Login sosial** (Google dan lainnya): belum dikonfigurasi.
+
+## Putaran 2: Redis, Octane, Reverb, TTLock (9 Oktober 2026)
+
+| Lingkungan | Hasil |
+|---|---|
+| `php artisan serve` + Redis (cache, session, queue) + worker `queue:work redis` | 58/58 skenario browser lulus; worker memproses 33 job (email + broadcast) tanpa gagal |
+| Container: **Octane (RoadRunner) + Redis + PostgreSQL 16** dari `docker/octane/Dockerfile` | 51/51 skenario browser lulus |
+| **Reverb end-to-end** (container): admin membuka Reservasi, tamu memesan dari browser lain | Toast "Reservasi baru" muncul di admin dalam ±1,3 detik, daftar ter-refresh sendiri, halaman tamu ter-update saat dikonfirmasi, console bersih |
+| TTLock (respons API tiruan, `tests/Feature/Hms/DoorLockTest.php`) | Kode diprogram saat check-in, dihapus saat check-out, token kedaluwarsa diperbarui, kunci offline tidak memblokir check-in |
+| `php artisan test` | 33 test / 195 assertion lulus |
+
+Temuan putaran 2 (sudah diperbaiki):
+
+| Temuan | Perbaikan |
+|---|---|
+| Channel privat `App.Models.User.{id}` membandingkan UUID sebagai integer, sehingga user dengan awalan angka sama bisa mendengar channel user lain | Dibandingkan sebagai string (`hash_equals`), ada test regresi |
+| Listener Echo (paksa logout) di panel admin tidak pernah aktif karena Echo tidak pernah dimuat | Partial `partials/realtime` memuat Echo/Pusher dari asset lokal |
+| `config/backup.php` membuat `artisan` crash bila `MAIL_FROM_ADDRESS` kosong (server baru / build image) | Alamat notifikasi selalu berupa string dengan fallback |
+| Browser memakai alamat Reverb internal (mis. nama container) | Alamat untuk browser dipisah: `VITE_REVERB_*` |
+| Statistik "online" di dashboard hilang bila session di Redis | Dicatat di sorted set Redis (`TrackOnlineUsers`) |
+
+Belum diuji dengan perangkat/akun sungguhan: kunci TTLock fisik + gateway, sandbox Tripay, SMTP produksi.

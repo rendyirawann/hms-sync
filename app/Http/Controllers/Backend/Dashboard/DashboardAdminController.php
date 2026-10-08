@@ -75,6 +75,10 @@ class DashboardAdminController extends Controller
      */
     private function onlineSessions(): ?int
     {
+        if (\App\Support\OnlineUsers::tracking()) {
+            return \App\Support\OnlineUsers::count();
+        }
+
         if (config('session.driver') !== 'database' || ! Schema::hasTable('sessions')) {
             return null;
         }

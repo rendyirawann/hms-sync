@@ -16,6 +16,8 @@ Ringkasan komponen yang berjalan di server:
 
 ---
 
+> **Cara tercepat: Docker.** `docker/compose.yaml` menjalankan app (Octane), queue worker, scheduler, Reverb, Redis, dan PostgreSQL sekaligus. Lihat [bagian 14](#14-alternatif-docker-compose). Bagian 1–13 di bawah adalah instalasi manual di VPS.
+
 ## 1. Siapkan server
 
 ```bash
@@ -198,11 +200,13 @@ Matikan `expose_php` di `/etc/php/8.3/fpm/php.ini` (`expose_php = Off`), lalu `s
 
 ### Opsi B: Laravel Octane (lebih cepat)
 
-Paket `laravel/octane` dan RoadRunner sudah ada di `composer.json`.
+`config/octane.php` sudah ada di repo (`.rr.yaml` dibuat otomatis oleh Octane). Unduh binary RoadRunner sekali di server:
 
 ```bash
-php artisan octane:install --server=roadrunner   # sekali saja; membuat config/octane.php & mengunduh binary rr
+php vendor/bin/rr get-binary          # menaruh ./rr di root project (sudah di .gitignore)
 ```
+
+> Octane membutuhkan ekstensi `pcntl`, jadi hanya berjalan di Linux/macOS (atau container), **tidak** di PHP Windows/XAMPP. Untuk pengembangan di Windows tetap pakai `php artisan serve`.
 
 Tambahkan di `.env`:
 
@@ -274,14 +278,25 @@ Isi di `.env`:
 
 ```dotenv
 BROADCAST_CONNECTION=reverb
-REVERB_HOST=hotel.example.com
-REVERB_PORT=443
-REVERB_SCHEME=https
-REVERB_SERVER_HOST=127.0.0.1
-REVERB_SERVER_PORT=8080
+REVERB_APP_ID=...            # dibuat oleh reverb:install
+REVERB_APP_KEY=...
+REVERB_APP_SECRET=...
+# Dipakai PHP untuk mengirim event ke Reverb (alamat internal)
+REVERB_HOST=127.0.0.1
+REVERB_PORT=8080
+REVERB_SCHEME=http
+# Dipakai browser (alamat publik di balik Nginx + HTTPS)
+VITE_REVERB_HOST=hotel.example.com
+VITE_REVERB_PORT=443
+VITE_REVERB_SCHEME=https
 ```
 
-Lalu `npm run build` ulang supaya variabel `VITE_REVERB_*` ikut ter-build.
+Panel admin dan halaman tamu memuat Echo dari asset lokal dan membaca `VITE_REVERB_*` saat runtime, jadi tidak perlu build ulang. Event realtime dikirim lewat **queue**, jadi worker wajib jalan.
+
+Yang realtime:
+- **Front desk** (channel privat `hms.frontdesk`): reservasi baru, bukti transfer, pembayaran, konfirmasi/batal, check-in/out, perpanjang, dan pindah kamar.
+- **Housekeeping** (`hms.housekeeping`): perubahan status kamar dan tugas.
+- **Tamu** (`App.Models.User.{id}`): halaman reservasi ter-update saat statusnya berubah. Payload tidak pernah berisi kode pintu.
 
 `/etc/supervisor/conf.d/hms-reverb.conf`:
 
@@ -390,3 +405,44 @@ php artisan up
 - [ ] Backup diuji (`backup:run`) dan disimpan ke disk eksternal.
 - [ ] `php artisan test` hijau di lingkungan staging.
 - [ ] Grade header di securityheaders.com = A.
+- [ ] Realtime: buka halaman Reservasi di satu browser, buat booking dari browser lain, lalu pastikan notifikasi muncul.
+- [ ] Smart lock (jika dipakai): satu check-in uji dan kodenya membuka pintu; check-out menghapus kode.
+
+## 14. Alternatif: Docker Compose
+
+Prasyarat: Docker Engine 24+ (atau Podman 5+) di server Linux.
+
+```bash
+git clone https://github.com/rendyirawann/hms-sync.git && cd hms-sync
+cp .env.example .env
+# isi APP_KEY (php artisan key:generate --show), APP_URL, DB_PASSWORD, MAIL_*, TRIPAY_*,
+# REVERB_APP_ID/KEY/SECRET (bebas, string acak), VITE_REVERB_HOST=domain-anda, dst.
+
+docker compose -f docker/compose.yaml up -d --build
+docker compose -f docker/compose.yaml exec app php artisan migrate --force
+docker compose -f docker/compose.yaml exec app php artisan db:seed --force
+```
+
+Container yang berjalan:
+
+| Service | Isi |
+|---|---|
+| `app` | Octane (RoadRunner) di `127.0.0.1:8000` |
+| `worker` | `queue:work redis` (email + event realtime) |
+| `scheduler` | `schedule:work` (expire booking, no-show, backup) |
+| `reverb` | websocket di `127.0.0.1:8080` |
+| `redis` | cache, session, queue |
+| `postgres` | PostgreSQL 16 (data di volume `postgres`) |
+
+File unggahan (foto, bukti transfer) disimpan di volume `storage`. Pasang Nginx/Caddy dengan HTTPS di depan port 8000 (app) dan 8080 (path `/app` untuk websocket), sama seperti contoh Nginx di bagian 6B dan 7.
+
+Deploy ulang:
+
+```bash
+git pull
+docker compose -f docker/compose.yaml up -d --build
+docker compose -f docker/compose.yaml exec app php artisan migrate --force
+```
+
+> Image ini sudah diuji: UAT browser lengkap (51 skenario) dan uji realtime end-to-end berjalan di atas container Octane + Redis + PostgreSQL + Reverb.
+

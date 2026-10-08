@@ -31,16 +31,18 @@ Dibangun dengan **Laravel 12**, **PostgreSQL**, panel admin **Metronic (Bootstra
 - Pembayaran online lewat **Tripay** (VA, QRIS, e-wallet, gerai retail) atau **transfer bank manual** dengan unggah bukti.
 - Halaman "Reservasi Saya": status, kode pintu kamar saat menginap, unduh **invoice PDF**, batalkan, dan beri **ulasan** setelah check-out.
 - Profil tamu: ubah nama, nomor HP, dan password.
+- Halaman reservasi tamu ter-update otomatis saat pembayaran diterima atau dikonfirmasi hotel.
 - Email otomatis di setiap tahap: reservasi dibuat, dibayar, dikonfirmasi, dibatalkan, kedaluwarsa, check-in (berisi nomor kamar dan kode pintu), dan check-out.
 
 ### Untuk front desk
 - Daftar reservasi dengan filter dan penanda bukti transfer yang perlu dicek.
 - **Booking walk-in** untuk tamu tanpa akun.
 - Verifikasi bukti transfer, catat pembayaran tunai/EDC, konfirmasi, dan pembatalan.
-- **Check-in**: pilih kamar, lalu kode pintu 6 digit dibuat otomatis (tersimpan terenkripsi).
+- **Check-in**: pilih kamar, lalu kode pintu 6 digit dibuat otomatis (tersimpan terenkripsi) dan, bila kamar memakai **smart lock TTLock**, langsung diprogram ke kunci dengan masa berlaku sampai check-out.
 - Saat tamu menginap: **folio** (minibar, laundry, restoran, late check-out), **perpanjang menginap**, **pindah kamar**, dan buat ulang kode pintu.
 - **Check-out** hanya bisa dilakukan setelah tagihan lunas. Kamar otomatis masuk antrean housekeeping.
 - **Kalender okupansi**: sisa kamar per tipe dan grid kamar × tanggal untuk 14 hari.
+- **Realtime (Reverb)**: reservasi baru, bukti transfer, pembayaran, check-in/out, dan status kamar langsung muncul sebagai notifikasi. Daftar reservasi, kalender, kamar, dan housekeeping memuat ulang sendiri (tidak saat staf sedang mengisi form).
 
 ### Untuk operasional & manajemen
 - Data master: profil hotel, tipe kamar (foto, fasilitas, harga), kamar, pegawai, dan master shift.
@@ -130,7 +132,11 @@ Customer tidak bisa membuka panel admin. Superadmin otomatis memiliki semua izin
 | PDF | barryvdh/laravel-dompdf |
 | Backup | spatie/laravel-backup |
 | Pembayaran | Tripay (HTTP API) |
-| Siap untuk | Redis, Laravel Octane, Laravel Reverb (lihat panduan deploy) |
+| Cache / session / queue | Redis |
+| Server aplikasi | Laravel Octane (RoadRunner) atau PHP-FPM |
+| Realtime | Laravel Reverb + Laravel Echo |
+| Smart lock | TTLock Open Platform (driver bisa ditambah) |
+| Container | `docker/octane/Dockerfile`, `docker/compose.yaml` |
 
 ---
 
@@ -185,7 +191,9 @@ Semua ada di `.env`. Contoh lengkapnya di [.env.example](.env.example).
 | `MAIL_*` | SMTP untuk email aktivasi dan notifikasi tamu. |
 | `QUEUE_CONNECTION` | `database` atau `redis`. Email dikirim lewat antrean, jadi **worker wajib jalan**. |
 | `TRIPAY_MODE`, `TRIPAY_API_KEY`, `TRIPAY_PRIVATE_KEY`, `TRIPAY_MERCHANT_CODE` | Kredensial Tripay. Kosongkan `TRIPAY_API_KEY` untuk mematikan pembayaran online. |
-| `DOOR_LOCK_DRIVER` | `log` (tanpa perangkat). Driver smart lock bisa ditambah lewat `App\Services\DoorLock\DoorLock`. |
+| `CACHE_STORE`, `SESSION_DRIVER`, `QUEUE_CONNECTION`, `REDIS_*` | Production: `redis`. |
+| `BROADCAST_CONNECTION=reverb`, `REVERB_*`, `VITE_REVERB_*` | Realtime. `REVERB_*` = alamat yang dipakai PHP; `VITE_REVERB_*` = alamat publik untuk browser. |
+| `DOOR_LOCK_DRIVER` | `log` (tanpa perangkat) atau `ttlock`. Isi `TTLOCK_*` dan **ID kunci** di tiap kamar (Data Master → Kamar). |
 | `HMS_NO_SHOW_CUTOFF` | Jam penandaan no-show (default `02:00`). |
 | `BACKUP_DISK`, `BACKUP_NOTIFY_EMAIL`, `BACKUP_ARCHIVE_PASSWORD` | Tujuan backup, email notifikasi, dan password zip. |
 | `SECURITY_*`, `RATE_LIMIT_*` | Security header dan rate limit (lihat `config/security.php`). |
@@ -196,6 +204,14 @@ Pengaturan yang diubah dari panel (**Profil Hotel**) dan tidak lewat `.env`:
 - Daftar rekening transfer.
 - Lokasi/radius dan IP clock-in.
 - Toleransi terlambat.
+
+### Smart lock TTLock
+1. Daftarkan aplikasi di [TTLock Open Platform](https://euopen.ttlock.com) untuk mendapat `client_id` dan `client_secret`.
+2. Pastikan setiap kunci sudah dipasangkan dengan **gateway** (G2/G3), karena kode dikirim lewat gateway.
+3. Isi `DOOR_LOCK_DRIVER=ttlock` dan `TTLOCK_*` di `.env`, berisi akun aplikasi TTLock pemilik kunci.
+4. Di **Data Master → Kamar**, isi **ID kunci pintu** (lockId) untuk setiap kamar. Kamar tanpa ID kunci tetap bisa dipakai, tetapi kodenya hanya tercatat di sistem.
+
+Saat check-in, kode diprogram dengan masa berlaku sampai jam check-out. Saat check-out atau pindah kamar, kode dihapus. Kalau kunci sedang offline, check-in tetap berjalan dan staf mendapat peringatan untuk menekan "Passcode Baru" setelah kunci online.
 
 ### Tripay
 1. Daftar merchant di [tripay.co.id](https://tripay.co.id), lalu ambil API key, private key, dan kode merchant (sandbox dulu).

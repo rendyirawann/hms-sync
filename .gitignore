@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+rr
+.rr.yaml
+
+# RoadRunner binary (downloaded by `php artisan octane:install`)
+/rr
+/rr.exe
