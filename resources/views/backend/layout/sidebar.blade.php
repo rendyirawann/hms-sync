@@ -37,12 +37,18 @@
 
             @php
                 $hmsLinks = array_filter([
-                    ['hms.bookings.index', 'hms.bookings.*', 'ki-calendar-tick', 'Reservasi', 'hms.booking'],
+                    ['hms.bookings.index', 'hms.bookings.index', 'ki-calendar-tick', 'Reservasi', 'hms.booking'],
+                    ['hms.bookings.calendar', 'hms.bookings.calendar', 'ki-calendar-8', 'Kalender Okupansi', 'hms.booking'],
+                    ['hms.housekeeping.index', 'hms.housekeeping.*', 'ki-brush', 'Housekeeping', 'hms.housekeeping'],
+                    ['hms.reports.index', 'hms.reports.*', 'ki-chart-line-up', 'Laporan', 'hms.reports'],
                     ['hms.my-shift.index', 'hms.my-shift.*', 'ki-check-circle', 'Shift Saya', 'hms.my_shift'],
                     ['hms.roster.index', 'hms.roster.*', 'ki-calendar', 'Jadwal Pegawai', 'hms.roster'],
                     ['hms.hotel.edit', 'hms.hotel.*', 'ki-bank', 'Profil Hotel', 'hms.master'],
                     ['hms.room-types.index', 'hms.room-types.*', 'ki-category', 'Tipe Kamar', 'hms.master'],
                     ['hms.rooms.index', 'hms.rooms.*', 'ki-key', 'Kamar', 'hms.master'],
+                    ['hms.pricing.index', 'hms.pricing.*', 'ki-price-tag', 'Harga & Promo', 'hms.master'],
+                    ['hms.gallery.index', 'hms.gallery.*', 'ki-picture', 'Galeri Foto', 'hms.master'],
+                    ['hms.reviews.index', 'hms.reviews.*', 'ki-star', 'Ulasan Tamu', 'hms.master'],
                     ['hms.staff.index', 'hms.staff.*', 'ki-profile-user', 'Pegawai', 'hms.master'],
                     ['hms.shifts.index', 'hms.shifts.*', 'ki-time', 'Master Shift', 'hms.master'],
                 ], fn ($link) => auth()->user()->can($link[4]));

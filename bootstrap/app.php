@@ -43,7 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // CSRF applies to every stateful route. Add a path here only for an
         // endpoint that authenticates by signature instead (e.g. a webhook).
-        $middleware->validateCsrfTokens(except: []);
+        $middleware->validateCsrfTokens(except: ['payment/tripay/callback']);
 
         // Only trust a reverse proxy when one is actually configured —
         // trusting "*" without a proxy would let a client spoof its own IP

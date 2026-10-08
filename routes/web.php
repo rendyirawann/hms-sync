@@ -22,6 +22,14 @@ use App\Http\Controllers\Backend\Settings\SettingController;
 
 // Hotel management
 use App\Http\Controllers\Backend\Hms\BookingController;
+use App\Http\Controllers\Backend\Hms\CalendarController;
+use App\Http\Controllers\Backend\Hms\GalleryController;
+use App\Http\Controllers\Backend\Hms\HousekeepingController;
+use App\Http\Controllers\Backend\Hms\PaymentController;
+use App\Http\Controllers\Backend\Hms\PromoCodeController;
+use App\Http\Controllers\Backend\Hms\RateRuleController;
+use App\Http\Controllers\Backend\Hms\ReportController;
+use App\Http\Controllers\Backend\Hms\ReviewController;
 use App\Http\Controllers\Backend\Hms\HotelController;
 use App\Http\Controllers\Backend\Hms\MyShiftController;
 use App\Http\Controllers\Backend\Hms\RoomController;
@@ -32,6 +40,8 @@ use App\Http\Controllers\Backend\Hms\StaffController;
 
 // Public site
 use App\Http\Controllers\Customer\BookingController as CustomerBookingController;
+use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
+use App\Http\Controllers\TripayCallbackController;
 use App\Http\Controllers\FrontendController;
 
 /*
@@ -47,14 +57,28 @@ use App\Http\Controllers\FrontendController;
 */
 Route::get('/', [FrontendController::class, 'index'])->name('landing');
 Route::get('/kamar', [FrontendController::class, 'search'])->name('rooms.search');
+Route::get('/kamar/{roomType}', [FrontendController::class, 'roomType'])->name('rooms.show');
+
+// Tripay server-to-server callback (signature-verified, CSRF exempt).
+Route::post('/payment/tripay/callback', TripayCallbackController::class)
+    ->middleware('throttle:api')->name('payment.tripay.callback');
 
 Route::middleware(['auth', 'verified', 'forbid-banned-user', 'role:Customer'])->group(function () {
     Route::get('/reservasi', [CustomerBookingController::class, 'index'])->name('customer.bookings.index');
     Route::get('/reservasi/baru/{roomType}', [CustomerBookingController::class, 'create'])->name('customer.bookings.create');
-    Route::post('/reservasi/baru/{roomType}', [CustomerBookingController::class, 'store'])
-        ->middleware('throttle:write')->name('customer.bookings.store');
-    Route::post('/reservasi/{booking}/batal', [CustomerBookingController::class, 'cancel'])
-        ->middleware('throttle:write')->name('customer.bookings.cancel');
+    Route::get('/reservasi/{booking}', [CustomerBookingController::class, 'show'])->name('customer.bookings.show');
+    Route::get('/reservasi/{booking}/invoice', [CustomerBookingController::class, 'invoice'])->name('customer.bookings.invoice');
+    Route::get('/profil', [CustomerProfileController::class, 'edit'])->name('customer.profile');
+
+    Route::middleware('throttle:write')->group(function () {
+        Route::post('/reservasi/baru/{roomType}', [CustomerBookingController::class, 'store'])->name('customer.bookings.store');
+        Route::post('/reservasi/{booking}/batal', [CustomerBookingController::class, 'cancel'])->name('customer.bookings.cancel');
+        Route::post('/reservasi/{booking}/bayar', [CustomerBookingController::class, 'payTripay'])->name('customer.bookings.pay');
+        Route::post('/reservasi/{booking}/bukti-transfer', [CustomerBookingController::class, 'uploadProof'])->name('customer.bookings.proof');
+        Route::post('/reservasi/{booking}/ulasan', [CustomerBookingController::class, 'review'])->name('customer.bookings.review');
+        Route::put('/profil', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
+        Route::put('/profil/password', [CustomerProfileController::class, 'password'])->middleware('throttle:password')->name('customer.profile.password');
+    });
 });
 
 /*
@@ -78,6 +102,37 @@ Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|adm
             ->names('hms.shifts');
         Route::resource('staff', StaffController::class)->only(['index', 'store', 'update', 'destroy'])
             ->parameters(['staff' => 'staff'])->names('hms.staff');
+
+        // Pricing: seasonal / weekend rules + promo codes
+        Route::get('pricing', [RateRuleController::class, 'index'])->name('hms.pricing.index');
+        Route::resource('rate-rules', RateRuleController::class)->only(['store', 'update', 'destroy'])->names('hms.rate-rules');
+        Route::resource('promo-codes', PromoCodeController::class)->only(['store', 'update', 'destroy'])->names('hms.promo-codes');
+
+        // Galleries
+        Route::get('gallery', [GalleryController::class, 'index'])->name('hms.gallery.index');
+        Route::post('gallery/room-types/{roomType}', [GalleryController::class, 'storeRoomType'])->name('hms.gallery.room-type.store');
+        Route::delete('gallery/room-types/images/{image}', [GalleryController::class, 'destroyRoomType'])->name('hms.gallery.room-type.destroy');
+        Route::post('gallery/hotel', [GalleryController::class, 'storeHotel'])->name('hms.gallery.hotel.store');
+        Route::delete('gallery/hotel/{image}', [GalleryController::class, 'destroyHotel'])->name('hms.gallery.hotel.destroy');
+
+        // Guest reviews moderation
+        Route::get('reviews', [ReviewController::class, 'index'])->name('hms.reviews.index');
+        Route::post('reviews/{review}/toggle', [ReviewController::class, 'toggle'])->name('hms.reviews.toggle');
+    });
+
+    // --- HMS: reports ---
+    Route::middleware('can:hms.reports')->prefix('admin/hms/reports')->name('hms.reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('shifts', [ReportController::class, 'shifts'])->name('shifts');
+    });
+
+    // --- HMS: housekeeping ---
+    Route::middleware('can:hms.housekeeping')->prefix('admin/hms/housekeeping')->name('hms.housekeeping.')->group(function () {
+        Route::get('/', [HousekeepingController::class, 'index'])->name('index');
+        Route::post('/', [HousekeepingController::class, 'store'])->name('store');
+        Route::post('{task}/assign', [HousekeepingController::class, 'assign'])->name('assign');
+        Route::post('{task}/start', [HousekeepingController::class, 'start'])->name('start');
+        Route::post('{task}/finish', [HousekeepingController::class, 'finish'])->name('finish');
     });
 
     // --- HMS: shift roster ---
@@ -97,7 +152,17 @@ Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|adm
     // --- HMS: bookings & front desk ---
     Route::middleware('can:hms.booking')->prefix('admin/hms/bookings')->name('hms.bookings.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::post('/', [BookingController::class, 'store'])->name('store');
+        Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
+        Route::get('payments/{payment}/proof', [PaymentController::class, 'proof'])->name('payments.proof');
+        Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
+        Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         Route::get('{booking}', [BookingController::class, 'show'])->name('show');
+        Route::get('{booking}/invoice', [BookingController::class, 'invoice'])->name('invoice');
+        Route::post('{booking}/extend', [BookingController::class, 'extend'])->name('extend');
+        Route::post('{booking}/move', [BookingController::class, 'move'])->name('move');
+        Route::post('{booking}/charges', [BookingController::class, 'addCharge'])->name('charges.store');
+        Route::delete('{booking}/charges/{charge}', [BookingController::class, 'removeCharge'])->name('charges.destroy');
         Route::post('{booking}/paid', [BookingController::class, 'markPaid'])->name('paid');
         Route::post('{booking}/confirm', [BookingController::class, 'confirm'])->name('confirm');
         Route::post('{booking}/cancel', [BookingController::class, 'cancel'])->name('cancel');

@@ -51,6 +51,8 @@ class RolePermissionSeeder extends Seeder
             'hms.booking',    // bookings, confirmation, check-in / check-out
             'hms.roster',     // assign employee shifts
             'hms.my_shift',   // clock in / clock out of own shift
+            'hms.housekeeping', // housekeeping board
+            'hms.reports',    // occupancy / revenue / attendance reports
         ];
 
         // Create all permissions
@@ -87,10 +89,12 @@ class RolePermissionSeeder extends Seeder
             'hms.booking',
             'hms.roster',
             'hms.my_shift',
+            'hms.housekeeping',
+            'hms.reports',
         ];
         $roleAdmin->syncPermissions($adminPermissions);
 
         // PEGAWAI — front-desk work and their own shift
-        $rolePegawai->syncPermissions(['view_dashboard', 'hms.booking', 'hms.my_shift']);
+        $rolePegawai->syncPermissions(['view_dashboard', 'hms.booking', 'hms.my_shift', 'hms.housekeeping']);
     }
 }

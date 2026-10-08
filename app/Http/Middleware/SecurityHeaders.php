@@ -31,7 +31,7 @@ class SecurityHeaders
         $response->headers->set(
             'Permissions-Policy',
             'accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), '
-            . 'geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=()'
+            . 'geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=()'
         );
 
         // Hide server fingerprints where PHP lets us. X-Powered-By is added by
@@ -101,7 +101,7 @@ class SecurityHeaders
             "worker-src 'self' blob:",
             "frame-src 'self'",
             "frame-ancestors 'self'",
-            "form-action 'self'",
+            "form-action 'self' https://tripay.co.id", // Tripay checkout is reached via a redirect after a form post
             "base-uri 'self'",
             "object-src 'none'",
         ];

@@ -23,7 +23,7 @@
                 <img loading="lazy" decoding="async" src="{{ $type->image_url }}" alt="{{ $type->name }}" class="md:w-72 h-52 md:h-auto object-cover">
                 <div class="p-6 flex-1 flex flex-col md:flex-row gap-6">
                     <div class="flex-1">
-                        <h3 class="text-xl font-extrabold text-slate-800 mb-1">{{ $type->name }}</h3>
+                        <h3 class="text-xl font-extrabold text-slate-800 mb-1"><a href="{{ route('rooms.show', $type) }}" class="hover:text-blue-600">{{ $type->name }}</a></h3>
                         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Maks. {{ $type->capacity }} tamu</p>
                         <p class="text-sm text-slate-600 mb-4">{{ \Illuminate\Support\Str::limit($type->description, 180) }}</p>
                         <div class="flex flex-wrap gap-2">
@@ -34,9 +34,9 @@
                     </div>
                     <div class="md:w-56 md:text-right flex flex-col md:items-end justify-between gap-3">
                         <div>
-                            <p class="text-xs font-bold text-slate-400">Rp {{ number_format($type->base_price, 0, ',', '.') }} / malam</p>
-                            <p class="text-2xl font-black text-orange-500">Rp {{ number_format($row['total'], 0, ',', '.') }}</p>
-                            <p class="text-xs text-slate-400 font-bold">total {{ $nights }} malam</p>
+                            <p class="text-xs font-bold text-slate-400">rata-rata Rp {{ number_format($row['quote']['room_total'] / max(1, $nights), 0, ',', '.') }} / malam</p>
+                            <p class="text-2xl font-black text-orange-500">Rp {{ number_format($row['quote']['total'], 0, ',', '.') }}</p>
+                            <p class="text-xs text-slate-400 font-bold">total {{ $nights }} malam, termasuk pajak &amp; service</p>
                         </div>
                         @if (! $row['fits'])
                             <span class="text-sm font-bold text-slate-500">Kapasitas tidak cukup untuk {{ $guests }} tamu</span>

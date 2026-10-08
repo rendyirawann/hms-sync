@@ -28,6 +28,21 @@ class RoomType extends Model
         return $this->hasMany(Room::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(RoomTypeImage::class)->orderBy('sort');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function rateRules()
+    {
+        return $this->hasMany(RateRule::class);
+    }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);

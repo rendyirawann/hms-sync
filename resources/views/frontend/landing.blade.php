@@ -88,14 +88,17 @@
                         </div>
                         <div class="p-6 flex flex-col flex-1">
                             <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Maks. {{ $type->capacity }} tamu</p>
-                            <h4 class="text-lg font-extrabold text-slate-800 mb-2 truncate">{{ $type->name }}</h4>
+                            <h4 class="text-lg font-extrabold text-slate-800 mb-2 truncate"><a href="{{ route('rooms.show', $type) }}" class="hover:text-blue-600">{{ $type->name }}</a></h4>
+                            @if ($type->reviews_avg_rating)
+                                <p class="text-xs font-bold text-yellow-500 mb-2">&#9733; {{ number_format($type->reviews_avg_rating, 1) }}</p>
+                            @endif
                             <p class="text-xs text-slate-500 mb-4">{{ implode(' · ', array_slice($type->amenities ?? [], 0, 4)) }}</p>
                             <div class="mt-auto flex items-end justify-between">
                                 <div>
                                     <p class="text-[10px] font-bold text-slate-400">Mulai dari</p>
-                                    <p class="text-lg font-black text-orange-500">Rp {{ number_format($type->base_price, 0, ',', '.') }}<span class="text-xs text-slate-400 font-bold">/malam</span></p>
+                                    <p class="text-lg font-black text-orange-500">Rp {{ number_format($fromPrice[$type->id] ?? $type->base_price, 0, ',', '.') }}<span class="text-xs text-slate-400 font-bold">/malam</span></p>
                                 </div>
-                                <a href="#cari" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-700">Pesan</a>
+                                <a href="{{ route('rooms.show', $type) }}" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-700">Lihat</a>
                             </div>
                         </div>
                     </div>
@@ -105,6 +108,51 @@
             </div>
         </div>
     </section>
+
+    @if ($gallery->isNotEmpty())
+    <!-- Facilities gallery -->
+    <section id="fasilitas" class="py-20">
+        <div class="container mx-auto px-4 lg:px-8">
+            <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Fasilitas</p>
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-10">Suasana {{ $hotel->name }}</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach ($gallery as $image)
+                    <figure class="relative overflow-hidden rounded-2xl {{ $loop->first ? 'md:col-span-2 md:row-span-2' : '' }}">
+                        <img src="{{ $image->url }}" alt="{{ $image->caption }}" loading="lazy" decoding="async" class="w-full h-full min-h-40 object-cover">
+                        @if ($image->caption)
+                            <figcaption class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3 text-xs font-bold text-white">{{ $image->caption }}</figcaption>
+                        @endif
+                    </figure>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
+    @if ($reviews->isNotEmpty())
+    <!-- Reviews -->
+    <section id="ulasan" class="py-20 bg-slate-50/50">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+                <div>
+                    <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Kata tamu kami</p>
+                    <h2 class="text-2xl font-extrabold text-slate-800">Ulasan tamu</h2>
+                </div>
+                <p class="text-sm font-bold text-slate-600"><span class="text-3xl font-black text-yellow-500">{{ number_format((float) $rating->average, 1) }}</span> / 5 dari {{ $rating->total }} ulasan</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach ($reviews as $review)
+                    <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-lg shadow-slate-200/30">
+                        <p class="text-yellow-400 mb-3">{{ str_repeat('★', $review->rating) }}<span class="text-slate-200">{{ str_repeat('★', 5 - $review->rating) }}</span></p>
+                        <p class="text-sm text-slate-600 mb-4">{{ \Illuminate\Support\Str::limit($review->comment ?: 'Menginap yang menyenangkan.', 220) }}</p>
+                        <p class="text-xs font-bold text-slate-800">{{ \Illuminate\Support\Str::words($review->user->name ?? 'Tamu', 2, '') }}</p>
+                        <p class="text-[11px] text-slate-400">{{ $review->roomType->name ?? '' }} &middot; {{ $review->created_at->translatedFormat('F Y') }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
 
     <!-- Value Propositions -->
     <section class="py-20 border-t border-slate-50">

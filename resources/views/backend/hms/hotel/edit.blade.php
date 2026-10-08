@@ -62,6 +62,63 @@
                                 <textarea name="description" rows="5" class="form-control form-control-solid">{{ $hotel->description }}</textarea>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="card card-flush mt-6">
+                        <div class="card-header"><h3 class="card-title">Tarif &amp; pembayaran</h3></div>
+                        <div class="card-body d-flex flex-column gap-5">
+                            <div class="row g-5">
+                                <div class="col-md-4">
+                                    <label class="form-label required">Pajak (%)</label>
+                                    <input type="number" step="0.01" min="0" max="100" name="tax_percent" value="{{ (float) $hotel->tax_percent }}" class="form-control form-control-solid">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Service charge (%)</label>
+                                    <input type="number" step="0.01" min="0" max="100" name="service_percent" value="{{ (float) $hotel->service_percent }}" class="form-control form-control-solid">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Batas waktu bayar (jam)</label>
+                                    <input type="number" min="0" max="720" name="payment_deadline_hours" value="{{ $hotel->payment_deadline_hours }}" class="form-control form-control-solid">
+                                    <div class="form-text">Booking online belum dibayar dibatalkan otomatis. 0 = tidak ada batas.</div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label">Rekening transfer manual</label>
+                                <textarea name="bank_accounts" rows="3" class="form-control form-control-solid" placeholder="BCA 1234567890 a.n. PT Hotel&#10;Mandiri 0987654321 a.n. PT Hotel">{{ $hotel->bank_accounts }}</textarea>
+                                <div class="form-text">Ditampilkan ke tamu yang memilih transfer bank. Kosongkan untuk menyembunyikan opsi transfer manual.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-flush mt-6">
+                        <div class="card-header"><h3 class="card-title">Aturan clock-in pegawai</h3></div>
+                        <div class="card-body d-flex flex-column gap-5">
+                            <div class="row g-5">
+                                <div class="col-md-4">
+                                    <label class="form-label">Latitude hotel</label>
+                                    <input type="number" step="0.0000001" name="latitude" value="{{ $hotel->latitude }}" class="form-control form-control-solid" placeholder="-6.2000000">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Longitude hotel</label>
+                                    <input type="number" step="0.0000001" name="longitude" value="{{ $hotel->longitude }}" class="form-control form-control-solid" placeholder="106.8166667">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Radius clock-in (meter)</label>
+                                    <input type="number" min="10" name="clock_in_radius_m" value="{{ $hotel->clock_in_radius_m }}" class="form-control form-control-solid" placeholder="Kosong = tanpa batas">
+                                </div>
+                            </div>
+                            <div class="row g-5">
+                                <div class="col-md-8">
+                                    <label class="form-label">IP jaringan hotel</label>
+                                    <input type="text" name="clock_in_ips" value="{{ $hotel->clock_in_ips }}" class="form-control form-control-solid" placeholder="mis. 103.10.20.30, 192.168.1.0/24">
+                                    <div class="form-text">Pisahkan dengan koma, boleh CIDR. Kosong = dari mana saja. IP Anda sekarang: {{ request()->ip() }}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label required">Toleransi terlambat (menit)</label>
+                                    <input type="number" min="0" max="240" name="late_grace_minutes" value="{{ $hotel->late_grace_minutes }}" class="form-control form-control-solid">
+                                </div>
+                            </div>
+                        </div>
                         <div class="card-footer d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary" data-loading-text="Menyimpan..."><i class="ki-outline ki-check fs-3"></i> Simpan</button>
                         </div>

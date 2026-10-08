@@ -19,6 +19,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Resolved once per request (and reset between Octane requests).
         $this->app->scoped(Brand::KEY, fn () => Brand::compute());
+
+        // Smart-lock vendor chosen by DOOR_LOCK_DRIVER (see config/hms.php).
+        $this->app->bind(\App\Services\DoorLock\DoorLock::class, fn () => match (config('hms.door_lock.driver')) {
+            default => new \App\Services\DoorLock\LogDoorLock(),
+        });
     }
 
     public function boot(): void

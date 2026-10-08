@@ -2,15 +2,20 @@
 @section('title', 'Reservasi')
 
 @section('content')
-    <x-hms.toolbar title="Reservasi" section="Front Desk" />
+    <x-hms.toolbar title="Reservasi" section="Front Desk">
+        <a href="{{ route('hms.bookings.calendar') }}" class="btn btn-sm btn-light"><i class="ki-outline ki-calendar-8 fs-4"></i> Kalender</a>
+        <button type="button" class="btn btn-sm btn-primary" data-hms-drawer="#drawer-walkin" data-title="Booking Walk-in">
+            <i class="ki-outline ki-plus fs-3"></i> Walk-in
+        </button>
+    </x-hms.toolbar>
 
     <x-hms.content>
         <div class="row g-5 mb-5">
             @foreach ([
-                ['Menunggu konfirmasi', $counts['Pending'], 'warning', ['status' => 'Pending']],
+                ['Menunggu pembayaran', $counts['Pending'], 'warning', ['status' => 'Pending']],
+                ['Bukti transfer perlu dicek', $counts['verify'], 'danger', ['needs_verification' => 1]],
                 ['Kedatangan hari ini', $counts['arrivals'], 'primary', ['date' => today()->toDateString()]],
                 ['Tamu menginap', $counts['InHouse'], 'success', ['status' => 'InHouse']],
-                ['Check-out hari ini', $counts['departures'], 'info', ['status' => 'InHouse']],
             ] as [$label, $value, $color, $query])
                 <div class="col-6 col-lg-3">
                     <a href="{{ route('hms.bookings.index', $query) }}" class="card card-flush h-100">
@@ -35,7 +40,7 @@
                         @endforeach
                     </select>
                     <input type="date" name="date" value="{{ request('date') }}" class="form-control form-control-solid w-175px" title="Tanggal check-in" onchange="this.form.submit()">
-                    @if (request()->hasAny(['q', 'status', 'date']))
+                    @if (request()->hasAny(['q', 'status', 'date', 'needs_verification']))
                         <a href="{{ route('hms.bookings.index') }}" class="btn btn-light">Reset</a>
                     @endif
                 </form>
@@ -59,8 +64,11 @@
                                 <tr>
                                     <td class="text-gray-900 fw-bold">{{ $booking->booking_code }}</td>
                                     <td>
-                                        {{ $booking->user->name }}
-                                        <div class="text-muted fs-7">{{ $booking->guest_phone ?: $booking->user->email }}</div>
+                                        {{ $booking->guest_display_name }}
+                                        @if ($booking->source === 'walkin')
+                                            <span class="badge badge-light-dark ms-1">walk-in</span>
+                                        @endif
+                                        <div class="text-muted fs-7">{{ $booking->guest_phone ?: $booking->guest_contact_email }}</div>
                                     </td>
                                     <td>{{ $booking->roomType->name }}
                                         @if ($booking->reservation)
@@ -73,7 +81,7 @@
                                     </td>
                                     <td>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                     <td>
-                                        <span class="badge badge-light-{{ $booking->status_badge }}">{{ $booking->status }}</span>
+                                        <span class="badge badge-light-{{ $booking->status_badge }}">{{ $booking->status_label }}</span>
                                         @if ($booking->is_checked_in)
                                             <span class="badge badge-success">Menginap</span>
                                         @endif
@@ -95,4 +103,57 @@
             </div>
         </div>
     </x-hms.content>
+
+    <x-hms.drawer id="drawer-walkin" title="Booking Walk-in" :action="route('hms.bookings.store')" width="520px">
+        <div class="notice bg-light-primary rounded p-4 fs-7">
+            Untuk tamu yang datang langsung. Booking otomatis terkonfirmasi; pembayaran &amp; check-in dilanjutkan dari tombol <b>Kelola</b>.
+        </div>
+        <div>
+            <label class="form-label required">Tipe kamar</label>
+            <select name="room_type_id" class="form-select form-select-solid">
+                <option value="">Pilih tipe</option>
+                @foreach ($roomTypes as $type)
+                    <option value="{{ $type->id }}">{{ $type->name }} (maks. {{ $type->capacity }} tamu)</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="row g-5">
+            <div class="col-6">
+                <label class="form-label required">Check-in</label>
+                <input type="date" name="check_in" value="{{ today()->toDateString() }}" class="form-control form-control-solid">
+            </div>
+            <div class="col-6">
+                <label class="form-label required">Check-out</label>
+                <input type="date" name="check_out" value="{{ today()->addDay()->toDateString() }}" class="form-control form-control-solid">
+            </div>
+        </div>
+        <div>
+            <label class="form-label required">Nama tamu</label>
+            <input type="text" name="guest_name" class="form-control form-control-solid">
+        </div>
+        <div class="row g-5">
+            <div class="col-6">
+                <label class="form-label required">Telepon</label>
+                <input type="text" name="guest_phone" class="form-control form-control-solid">
+            </div>
+            <div class="col-6">
+                <label class="form-label">Email (opsional)</label>
+                <input type="email" name="guest_email" class="form-control form-control-solid">
+            </div>
+        </div>
+        <div class="row g-5">
+            <div class="col-6">
+                <label class="form-label required">Jumlah tamu</label>
+                <input type="number" name="guests" value="1" min="1" max="20" class="form-control form-control-solid">
+            </div>
+            <div class="col-6">
+                <label class="form-label">Kode promo</label>
+                <input type="text" name="promo_code" class="form-control form-control-solid text-uppercase">
+            </div>
+        </div>
+        <div>
+            <label class="form-label">Catatan</label>
+            <textarea name="notes" rows="2" class="form-control form-control-solid"></textarea>
+        </div>
+    </x-hms.drawer>
 @endsection

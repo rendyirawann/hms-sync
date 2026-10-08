@@ -8,13 +8,8 @@
         'Confirmed' => 'bg-blue-50 text-blue-700',
         'Completed' => 'bg-green-50 text-green-700',
         'Cancelled' => 'bg-red-50 text-red-600',
-    ];
-    $statusLabel = [
-        'Pending' => 'Menunggu konfirmasi',
-        'Paid' => 'Sudah dibayar',
-        'Confirmed' => 'Terkonfirmasi',
-        'Completed' => 'Selesai',
-        'Cancelled' => 'Dibatalkan',
+        'Expired' => 'bg-slate-100 text-slate-600',
+        'NoShow' => 'bg-slate-100 text-slate-600',
     ];
 @endphp
 
@@ -32,8 +27,8 @@
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-3 mb-1">
                         <h3 class="text-lg font-extrabold text-slate-800">{{ $booking->roomType->name }}</h3>
-                        <span class="text-xs font-bold px-3 py-1 rounded-full {{ $statusStyle[$booking->status] }}">
-                            {{ $res?->status === 'Active' ? 'Sedang menginap' : $statusLabel[$booking->status] }}
+                        <span class="text-xs font-bold px-3 py-1 rounded-full {{ $statusStyle[$booking->status] ?? 'bg-slate-100' }}">
+                            {{ $res?->status === 'Active' ? 'Sedang menginap' : $booking->status_label }}
                         </span>
                     </div>
                     <p class="text-xs font-bold text-slate-400 mb-3">Kode: {{ $booking->booking_code }}</p>
@@ -53,12 +48,11 @@
                 </div>
                 <div class="md:text-right flex flex-col md:items-end justify-between gap-3">
                     <p class="text-xl font-black text-orange-500">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</p>
-                    @if ($booking->status === 'Pending')
-                        <form method="POST" action="{{ route('customer.bookings.cancel', $booking) }}" onsubmit="return confirm('Batalkan reservasi {{ $booking->booking_code }}?');">
-                            @csrf
-                            <button type="submit" class="text-sm font-bold text-red-500 hover:underline">Batalkan</button>
-                        </form>
-                    @endif
+                    <a href="{{ route('customer.bookings.show', $booking) }}" class="rounded-xl px-5 py-2.5 text-sm font-black text-center {{ $booking->status === 'Pending' ? 'bg-orange-500 text-white' : 'border border-slate-200 text-slate-700' }}">
+                        @if ($booking->status === 'Pending') Bayar sekarang
+                        @elseif ($booking->status === 'Completed' && ! $booking->review) Beri ulasan
+                        @else Lihat detail @endif
+                    </a>
                 </div>
             </div>
         @empty

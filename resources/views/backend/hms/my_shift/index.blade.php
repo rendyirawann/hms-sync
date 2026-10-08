@@ -22,8 +22,13 @@
                             <span class="badge badge-light-{{ $current->status_badge }} mb-6">{{ ['Pending' => 'Belum mulai', 'Started' => 'Sedang bertugas', 'Finished' => 'Selesai'][$current->status] }}</span>
 
                             @if ($current->status === 'Pending')
-                                <form method="POST" action="{{ route('hms.my-shift.start', $current) }}" data-ajax>
+                                <form method="POST" action="{{ route('hms.my-shift.start', $current) }}" data-ajax @if ($needsLocation) data-needs-location @endif>
                                     @csrf
+                                    <input type="hidden" name="latitude">
+                                    <input type="hidden" name="longitude">
+                                    @if ($needsLocation)
+                                        <div class="text-muted fs-7 mb-3" data-location-status>Clock-in memerlukan lokasi Anda (maks. radius hotel).</div>
+                                    @endif
                                     <button type="submit" class="btn btn-lg btn-success w-100" data-loading-text="Memulai...">
                                         <i class="ki-outline ki-entrance-left fs-2"></i> Mulai Shift (Clock-in)
                                     </button>
@@ -78,6 +83,30 @@
 
 @push('scripts')
     <script>
+        // Fill the GPS position before the clock-in form is sent (hms-admin.js
+        // submits in the bubbling phase, so this capture listener runs first).
+        (function () {
+            var form = document.querySelector('form[data-needs-location]');
+            if (!form) { return; }
+            var status = form.querySelector('[data-location-status]');
+            form.addEventListener('submit', function (event) {
+                if (form.latitude.value) { return; }
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (!navigator.geolocation) { HMS.error('Browser tidak mendukung lokasi.'); return; }
+                status.textContent = 'Mengambil lokasi...';
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    form.latitude.value = pos.coords.latitude;
+                    form.longitude.value = pos.coords.longitude;
+                    status.textContent = 'Lokasi didapat (akurasi ±' + Math.round(pos.coords.accuracy) + ' m).';
+                    form.requestSubmit();
+                }, function () {
+                    status.textContent = 'Lokasi ditolak.';
+                    HMS.error('Izinkan akses lokasi di browser untuk clock-in.');
+                }, { enableHighAccuracy: true, timeout: 15000 });
+            }, true);
+        })();
+
         setInterval(function () {
             var d = new Date();
             document.getElementById('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');

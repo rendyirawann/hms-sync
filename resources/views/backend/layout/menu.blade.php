@@ -14,18 +14,38 @@
         </a>
     </div>
 
-    @can('hms.booking')
-        <div class="menu-item me-lg-2 {{ request()->routeIs('hms.bookings.*') ? 'here show menu-here-bg' : '' }}">
-            <a class="menu-link py-3" href="{{ route('hms.bookings.index') }}">
+    @canany(['hms.booking', 'hms.housekeeping', 'hms.reports'])
+        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+            class="menu-item menu-lg-down-accordion me-lg-2 {{ request()->routeIs('hms.bookings.*', 'hms.housekeeping.*', 'hms.reports.*') ? 'here show menu-here-bg' : '' }}">
+            <span class="menu-link py-3">
                 <span class="menu-icon"><i class="ki-duotone ki-calendar-tick fs-3"><span class="path1"></span><span class="path2"></span><span class="path3"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></i></span>
-                <span class="menu-title">Reservasi</span>
-            </a>
+                <span class="menu-title">Operasional</span>
+                <span class="menu-arrow d-lg-none"></span>
+            </span>
+            <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown py-4 w-225px">
+                @foreach ([
+                    ['hms.bookings.index', 'hms.bookings.index', 'ki-calendar-tick', 'Reservasi', 'hms.booking'],
+                    ['hms.bookings.calendar', 'hms.bookings.calendar', 'ki-calendar-8', 'Kalender Okupansi', 'hms.booking'],
+                    ['hms.housekeeping.index', 'hms.housekeeping.*', 'ki-brush', 'Housekeeping', 'hms.housekeeping'],
+                    ['hms.reports.index', 'hms.reports.index', 'ki-chart-line-up', 'Laporan Hotel', 'hms.reports'],
+                    ['hms.reports.shifts', 'hms.reports.shifts', 'ki-time', 'Rekap Shift', 'hms.reports'],
+                ] as [$route, $pattern, $icon, $label, $ability])
+                    @can($ability)
+                        <div class="menu-item">
+                            <a class="menu-link {{ request()->routeIs($pattern) ? 'active' : '' }}" href="{{ route($route) }}">
+                                <span class="menu-icon"><i class="ki-outline {{ $icon }} fs-4"></i></span>
+                                <span class="menu-title">{{ $label }}</span>
+                            </a>
+                        </div>
+                    @endcan
+                @endforeach
+            </div>
         </div>
-    @endcan
+    @endcanany
 
     @can('hms.master')
         <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
-            class="menu-item menu-lg-down-accordion me-lg-2 {{ request()->routeIs('hms.hotel.*', 'hms.room-types.*', 'hms.rooms.*', 'hms.staff.*', 'hms.shifts.*') ? 'here show menu-here-bg' : '' }}">
+            class="menu-item menu-lg-down-accordion me-lg-2 {{ request()->routeIs('hms.hotel.*', 'hms.room-types.*', 'hms.rooms.*', 'hms.staff.*', 'hms.shifts.*', 'hms.pricing.*', 'hms.gallery.*', 'hms.reviews.*') ? 'here show menu-here-bg' : '' }}">
             <span class="menu-link py-3">
                 <span class="menu-icon"><i class="ki-duotone ki-home-2 fs-3"><span class="path1"></span><span class="path2"></span></i></span>
                 <span class="menu-title">Data Master</span>
@@ -36,6 +56,9 @@
                     ['hms.hotel.edit', 'hms.hotel.*', 'ki-bank', 'Profil Hotel'],
                     ['hms.room-types.index', 'hms.room-types.*', 'ki-category', 'Tipe Kamar'],
                     ['hms.rooms.index', 'hms.rooms.*', 'ki-key', 'Kamar'],
+                    ['hms.pricing.index', 'hms.pricing.*', 'ki-price-tag', 'Harga & Promo'],
+                    ['hms.gallery.index', 'hms.gallery.*', 'ki-picture', 'Galeri Foto'],
+                    ['hms.reviews.index', 'hms.reviews.*', 'ki-star', 'Ulasan Tamu'],
                     ['hms.staff.index', 'hms.staff.*', 'ki-profile-user', 'Pegawai'],
                     ['hms.shifts.index', 'hms.shifts.*', 'ki-time', 'Master Shift'],
                 ] as [$route, $pattern, $icon, $label])

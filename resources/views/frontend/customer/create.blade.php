@@ -1,6 +1,8 @@
 @extends('frontend.layout')
 @section('title', 'Pesan ' . $roomType->name . ' - ' . $hotel->name)
 
+@php $rp = fn ($v) => 'Rp ' . number_format((float) $v, 0, ',', '.'); @endphp
+
 @section('content')
     <a href="{{ route('rooms.search', ['check_in' => $checkIn->toDateString(), 'check_out' => $checkOut->toDateString(), 'guests' => $guests]) }}"
         class="inline-block text-sm font-bold text-blue-600 mb-6">&larr; Kembali ke pilihan kamar</a>
@@ -35,6 +37,20 @@
             </div>
 
             <label class="block">
+                <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Kode promo (opsional)</span>
+                <div class="mt-1 flex gap-2">
+                    <input type="text" name="promo_code" value="{{ old('promo_code', $promoCode) }}" class="w-full rounded-xl border border-slate-200 px-4 py-3 font-bold uppercase text-slate-800">
+                    <button type="submit" formaction="{{ route('customer.bookings.create', $roomType) }}" formmethod="GET" formnovalidate
+                        class="rounded-xl border border-blue-200 px-5 text-sm font-bold text-blue-600 whitespace-nowrap">Cek promo</button>
+                </div>
+                @if ($promoError)
+                    <span class="text-xs font-bold text-red-500">{{ $promoError }}</span>
+                @elseif ($quote['promo'])
+                    <span class="text-xs font-bold text-green-600">Promo {{ $quote['promo']->code }} dipakai: hemat {{ $rp($quote['discount']) }}</span>
+                @endif
+            </label>
+
+            <label class="block">
                 <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Permintaan khusus (opsional)</span>
                 <textarea name="notes" rows="3" class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-800"
                     placeholder="mis. kasur twin, lantai atas, datang larut malam">{{ old('notes') }}</textarea>
@@ -43,7 +59,9 @@
             <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
                 Pemesan: <span class="font-bold text-slate-800">{{ auth()->user()->name }}</span> ({{ auth()->user()->email }}).
                 Check-in mulai pukul {{ substr($hotel->check_in_time, 0, 5) }}, check-out paling lambat {{ substr($hotel->check_out_time, 0, 5) }}.
-                Reservasi berstatus <span class="font-bold">Pending</span> sampai dikonfirmasi hotel.
+                @if ($hotel->payment_deadline_hours)
+                    Pembayaran harus diselesaikan dalam {{ $hotel->payment_deadline_hours }} jam setelah reservasi dibuat.
+                @endif
             </div>
 
             @if ($available < 1)
@@ -51,7 +69,7 @@
             @endif
 
             <button type="submit" class="self-start bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-2xl font-extrabold shadow-xl shadow-blue-600/30">
-                Buat Reservasi
+                Buat Reservasi &amp; Bayar
             </button>
         </form>
 
@@ -61,9 +79,16 @@
                 <h2 class="text-lg font-extrabold text-slate-800">{{ $roomType->name }}</h2>
                 <p class="text-xs text-slate-400 font-bold mb-4">{{ $hotel->name }}</p>
                 <dl class="text-sm space-y-2">
-                    <div class="flex justify-between"><dt class="text-slate-500">Harga / malam</dt><dd class="font-bold">Rp {{ number_format($roomType->base_price, 0, ',', '.') }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-slate-500">Lama menginap</dt><dd class="font-bold">{{ $nights }} malam</dd></div>
-                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-3"><dt class="font-bold">Total</dt><dd class="text-xl font-black text-orange-500">Rp {{ number_format($total, 0, ',', '.') }}</dd></div>
+                    @foreach ($quote['nights'] as $date => $price)
+                        <div class="flex justify-between text-slate-500"><dt>{{ \Carbon\Carbon::parse($date)->translatedFormat('D, d M') }}</dt><dd>{{ $rp($price) }}</dd></div>
+                    @endforeach
+                    <div class="flex justify-between border-t border-slate-100 pt-2"><dt class="text-slate-500">Harga kamar ({{ $nights }} malam)</dt><dd class="font-bold">{{ $rp($quote['room_total']) }}</dd></div>
+                    @if ($quote['discount'] > 0)
+                        <div class="flex justify-between text-green-600"><dt>Diskon</dt><dd class="font-bold">- {{ $rp($quote['discount']) }}</dd></div>
+                    @endif
+                    <div class="flex justify-between"><dt class="text-slate-500">Service charge ({{ (float) $hotel->service_percent }}%)</dt><dd class="font-bold">{{ $rp($quote['service_charge']) }}</dd></div>
+                    <div class="flex justify-between"><dt class="text-slate-500">Pajak ({{ (float) $hotel->tax_percent }}%)</dt><dd class="font-bold">{{ $rp($quote['tax']) }}</dd></div>
+                    <div class="flex justify-between border-t border-slate-100 pt-3 mt-3"><dt class="font-bold">Total</dt><dd class="text-xl font-black text-orange-500">{{ $rp($quote['total']) }}</dd></div>
                 </dl>
                 <p class="text-[11px] text-slate-400 mt-3">Total dihitung ulang otomatis jika tanggal diubah.</p>
             </div>
