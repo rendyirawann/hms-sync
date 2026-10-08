@@ -16,6 +16,7 @@
         <a href="{{ route('hms.bookings.calendar', ['start' => $start->copy()->addDays(14)->toDateString()]) }}" class="btn btn-sm btn-light"><i class="ki-outline ki-right fs-4"></i></a>
     </x-hms.toolbar>
 
+    <span hidden data-live-reload="booking,room"></span>
     <x-hms.content>
         <div class="card card-flush mb-6">
             <div class="card-header"><h3 class="card-title">Sisa kamar per tipe</h3></div>

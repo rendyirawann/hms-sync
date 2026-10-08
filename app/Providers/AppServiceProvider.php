@@ -22,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Smart-lock vendor chosen by DOOR_LOCK_DRIVER (see config/hms.php).
         $this->app->bind(\App\Services\DoorLock\DoorLock::class, fn () => match (config('hms.door_lock.driver')) {
+            'ttlock' => new \App\Services\DoorLock\TTLockDoorLock(),
             default => new \App\Services\DoorLock\LogDoorLock(),
         });
     }

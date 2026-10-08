@@ -129,7 +129,13 @@
     @stack('stylesheets')
 </head>
 
-<body id="kt_body" class="app-blank">
+@php
+    $hmsChannels = array_keys(array_filter([
+        'frontdesk' => auth()->user()?->can('hms.booking'),
+        'housekeeping' => auth()->user()?->can('hms.housekeeping') || auth()->user()?->can('hms.booking'),
+    ]));
+@endphp
+<body id="kt_body" class="app-blank" data-hms-channels="{{ implode(',', $hmsChannels) }}">
 
     @if (request()->boolean('welcome'))
         {{-- Rendered server-side so the dashboard never flashes before the
@@ -205,6 +211,7 @@
     @stack('vendor-scripts')
     <script src="{{ asset('assets/js/app-shell.js') }}"></script>
     <script src="{{ asset('assets/js/hms-admin.js') }}"></script>
+    @include('partials.realtime')
 
     {{-- Shared centered modal for "detail" views (form drawers slide from the right). --}}
     <div class="modal fade" id="hms-show-modal" tabindex="-1" aria-hidden="true">

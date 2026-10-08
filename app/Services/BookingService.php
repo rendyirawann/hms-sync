@@ -11,8 +11,10 @@ use App\Models\Reservation;
 use App\Models\Room;
 use App\Models\RoomMove;
 use App\Models\RoomType;
+use App\Events\Hms\BookingUpdated;
 use App\Notifications\BookingNotification;
 use App\Services\DoorLock\DoorLock;
+use Throwable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -26,6 +28,9 @@ use Illuminate\Validation\ValidationException;
  */
 class BookingService
 {
+    /** Set when the smart lock could not be updated; shown to the front desk. */
+    public ?string $lockWarning = null;
+
     public function __construct(
         private RoomAvailability $availability,
         private Pricing $pricing,
@@ -172,7 +177,7 @@ class BookingService
             return $reservation;
         });
 
-        $this->doorLock->grant($reservation->room, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time));
+        $this->lock(fn () => $this->doorLock->grant($reservation->room, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
         $this->notify($booking, 'checked_in');
 
         return $reservation;
@@ -196,7 +201,7 @@ class BookingService
             ]);
         });
 
-        $this->doorLock->revoke($reservation->room);
+        $this->lock(fn () => $this->doorLock->revoke($reservation->room));
         $this->notify($booking, 'checked_out');
     }
 
@@ -204,7 +209,7 @@ class BookingService
     {
         $code = $this->newPasscode();
         $reservation->update(['door_passcode' => $code]);
-        $this->doorLock->grant($reservation->room, $code, now(), $reservation->booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time));
+        $this->lock(fn () => $this->doorLock->grant($reservation->room, $code, now(), $reservation->booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
 
         return $code;
     }
@@ -219,7 +224,7 @@ class BookingService
             throw ValidationException::withMessages(['check_out' => 'Tanggal check-out baru harus setelah ' . $oldOut->translatedFormat('d M Y') . '.']);
         }
 
-        return DB::transaction(function () use ($booking, $newOut, $oldOut, $by) {
+        $amount = DB::transaction(function () use ($booking, $newOut, $oldOut, $by) {
             $type = RoomType::whereKey($booking->room_type_id)->lockForUpdate()->first();
 
             // The guest keeps their room, so only the extra nights need a free unit of this type.
@@ -240,6 +245,10 @@ class BookingService
 
             return $quote['total'];
         });
+
+        $this->announce($booking, 'extended');
+
+        return $amount;
     }
 
     public function moveRoom(Booking $booking, int $toRoomId, ?string $reason, ?string $by = null): Room
@@ -275,14 +284,33 @@ class BookingService
             return $to;
         });
 
-        $this->doorLock->revoke($fromRoom);
-        $this->doorLock->grant($to, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time));
+        $this->lock(fn () => $this->doorLock->revoke($fromRoom));
+        $this->announce($booking, 'moved');
+        $this->lock(fn () => $this->doorLock->grant($to, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
 
         return $to;
     }
 
+    /** Run a smart-lock call; the stay goes ahead even when the lock is unreachable. */
+    private function lock(callable $call): void
+    {
+        try {
+            $call();
+        } catch (Throwable $e) {
+            report($e);
+            $this->lockWarning = 'Kunci pintu belum tersinkron: ' . $e->getMessage() . '. Atur kode secara manual atau coba "Passcode Baru".';
+        }
+    }
+
+    /** Realtime push to the front desk and the guest (Reverb). */
+    public function announce(Booking $booking, string $action): void
+    {
+        BookingUpdated::dispatch($booking, $action);
+    }
+
     public function notify(Booking $booking, string $event): void
     {
+        $this->announce($booking, $event);
         $booking->loadMissing('user');
 
         if ($booking->user) {

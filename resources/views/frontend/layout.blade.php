@@ -26,5 +26,22 @@
     </main>
 
     @include('frontend.partials.footer')
+
+    @auth
+        @if (auth()->user()->isCustomer() && request()->routeIs('customer.bookings.index', 'customer.bookings.show'))
+            @include('partials.realtime')
+            <script>
+                // Payment confirmed / room ready while the guest watches the page.
+                window.addEventListener('echo:ready', function () {
+                    var watching = @json(request()->route('booking')?->id);
+                    window.Echo.private(@json('App.Models.User.' . auth()->id())).listen('.booking.updated', function (e) {
+                        if (watching && e.id !== watching) { return; }
+                        var typing = document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].indexOf(document.activeElement.tagName) !== -1;
+                        if (!typing) { window.location.reload(); }
+                    });
+                });
+            </script>
+        @endif
+    @endauth
 </body>
 </html>

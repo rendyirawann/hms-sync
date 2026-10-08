@@ -22,6 +22,19 @@ class HousekeepingTask extends Model
         'finished_at' => 'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (HousekeepingTask $task) {
+            $room = $task->room()->first(['id', 'room_number', 'status']);
+            if ($room) {
+                \App\Events\Hms\RoomBoardUpdated::dispatch(
+                    $room->id, $room->room_number, $room->status,
+                    'tugas ' . strtolower(self::STATUSES[$task->status] ?? $task->status)
+                );
+            }
+        });
+    }
+
     public function room()
     {
         return $this->belongsTo(Room::class);

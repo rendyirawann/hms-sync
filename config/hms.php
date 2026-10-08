@@ -28,7 +28,17 @@ return [
     | App\Services\DoorLock\DoorLock for TTLock, Nuki, etc.
     */
     'door_lock' => [
-        'driver' => env('DOOR_LOCK_DRIVER', 'log'),
+        'driver' => env('DOOR_LOCK_DRIVER', 'log'), // log | ttlock
+    ],
+
+    // TTLock Open Platform (https://euopen.ttlock.com). The account is the
+    // TTLock app account that owns the locks; each room stores its lockId.
+    'ttlock' => [
+        'base_url' => env('TTLOCK_BASE_URL', 'https://euapi.ttlock.com'),
+        'client_id' => env('TTLOCK_CLIENT_ID'),
+        'client_secret' => env('TTLOCK_CLIENT_SECRET'),
+        'username' => env('TTLOCK_USERNAME'),
+        'password' => env('TTLOCK_PASSWORD'),
     ],
 
     /*

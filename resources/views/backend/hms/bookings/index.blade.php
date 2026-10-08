@@ -9,6 +9,7 @@
         </button>
     </x-hms.toolbar>
 
+    <span hidden data-live-reload="booking"></span>
     <x-hms.content>
         <div class="row g-5 mb-5">
             @foreach ([

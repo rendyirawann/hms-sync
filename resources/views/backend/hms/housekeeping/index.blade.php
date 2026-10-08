@@ -11,6 +11,7 @@
         </button>
     </x-hms.toolbar>
 
+    <span hidden data-live-reload="room"></span>
     <x-hms.content>
         <div class="row g-6">
             @foreach (['pending' => ['Menunggu', 'warning'], 'in_progress' => ['Dikerjakan', 'primary']] as $status => [$label, $color])

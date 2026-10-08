@@ -14,6 +14,7 @@
         </button>
     </x-hms.toolbar>
 
+    <span hidden data-live-reload="room"></span>
     <x-hms.content>
         <div class="row g-5 mb-5">
             @foreach ($statusLabel as $key => $label)
@@ -58,7 +59,12 @@
                         <tbody class="fw-semibold text-gray-700">
                             @forelse ($rooms as $room)
                                 <tr>
-                                    <td class="text-gray-900 fw-bold">{{ $room->room_number }}</td>
+                                    <td class="text-gray-900 fw-bold">
+                                        {{ $room->room_number }}
+                                        @if ($room->lock_id)
+                                            <i class="ki-outline ki-lock-2 fs-6 text-success ms-1" title="Kunci pintu terhubung ({{ $room->lock_id }})"></i>
+                                        @endif
+                                    </td>
                                     <td>{{ $room->floor ?: '-' }}</td>
                                     <td>{{ $room->roomType->name }}</td>
                                     <td><span class="badge badge-light-{{ $statusColor[$room->status] }}">{{ $statusLabel[$room->status] }}</span></td>
@@ -82,7 +88,7 @@
                                         <button type="button" class="btn btn-sm btn-icon btn-light-primary" title="Ubah"
                                             data-hms-drawer="#drawer-room" data-title="Ubah Kamar {{ $room->room_number }}"
                                             data-action="{{ route('hms.rooms.update', $room) }}" data-method="PUT"
-                                            data-record="{{ json_encode($room->only('room_type_id', 'room_number', 'floor', 'status')) }}">
+                                            data-record="{{ json_encode($room->only('room_type_id', 'room_number', 'floor', 'status', 'lock_id')) }}">
                                             <i class="ki-outline ki-pencil fs-4"></i>
                                         </button>
                                         <x-hms.delete :action="route('hms.rooms.destroy', $room)" />
@@ -127,6 +133,11 @@
                 @endforeach
             </select>
             <div class="form-text">Status "Terisi" diatur otomatis saat check-in / check-out.</div>
+        </div>
+        <div>
+            <label class="form-label">ID kunci pintu (TTLock)</label>
+            <input type="text" name="lock_id" class="form-control form-control-solid" placeholder="mis. 12345678">
+            <div class="form-text">lockId dari aplikasi/portal TTLock. Kosongkan bila pintu belum memakai smart lock.</div>
         </div>
     </x-hms.drawer>
 @endsection

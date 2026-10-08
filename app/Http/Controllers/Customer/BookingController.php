@@ -166,6 +166,8 @@ class BookingController extends Controller
             'proof_path' => $path,
         ]);
 
+        $this->bookings->announce($booking, 'proof_uploaded');
+
         return back()->with('success', 'Bukti transfer terkirim. Kami akan memverifikasi secepatnya.');
     }
 

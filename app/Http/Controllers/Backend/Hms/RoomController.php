@@ -80,6 +80,7 @@ class RoomController extends Controller
             'room_number' => ['required', 'string', 'max:20', Rule::unique('rooms')->ignore($room?->id)],
             'floor' => ['nullable', 'string', 'max:10'],
             'status' => ['required', Rule::in(Room::STATUSES)],
-        ], [], ['room_type_id' => 'tipe kamar', 'room_number' => 'nomor kamar', 'floor' => 'lantai']);
+            'lock_id' => ['nullable', 'string', 'max:50', Rule::unique('rooms')->ignore($room?->id)],
+        ], [], ['room_type_id' => 'tipe kamar', 'room_number' => 'nomor kamar', 'floor' => 'lantai', 'lock_id' => 'ID kunci pintu']);
     }
 }

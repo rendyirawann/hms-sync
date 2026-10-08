@@ -9,8 +9,19 @@ class Room extends Model
     public const STATUSES = ['Available', 'Occupied', 'Maintenance', 'Cleaning'];
 
     protected $fillable = [
-        'room_type_id', 'room_number', 'floor', 'status',
+        'room_type_id', 'room_number', 'floor', 'status', 'lock_id',
     ];
+
+    protected $hidden = ['lock_code_ref'];
+
+    protected static function booted(): void
+    {
+        static::updated(function (Room $room) {
+            if ($room->wasChanged('status')) {
+                \App\Events\Hms\RoomBoardUpdated::dispatch($room->id, $room->room_number, $room->status, 'status ' . $room->status);
+            }
+        });
+    }
 
     public function roomType()
     {

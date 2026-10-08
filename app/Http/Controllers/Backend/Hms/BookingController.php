@@ -167,7 +167,7 @@ class BookingController extends Controller
 
         $reservation = $this->bookings->checkIn($booking, (int) $request->room_id);
 
-        return $this->done($request, 'Check-in berhasil. Kamar ' . $reservation->room->room_number . ', passcode pintu: ' . $reservation->door_passcode);
+        return $this->done($request, $this->withLockWarning('Check-in berhasil. Kamar ' . $reservation->room->room_number . ', passcode pintu: ' . $reservation->door_passcode));
     }
 
     public function checkOut(Request $request, Booking $booking)
@@ -185,7 +185,7 @@ class BookingController extends Controller
         $room = $booking->reservation->room->room_number;
         $this->bookings->checkOut($booking, $request->user()->id);
 
-        return $this->done($request, 'Check-out berhasil. Kamar ' . $room . ' masuk antrean housekeeping.');
+        return $this->done($request, $this->withLockWarning('Check-out berhasil. Kamar ' . $room . ' masuk antrean housekeeping.'));
     }
 
     public function regeneratePasscode(Request $request, Booking $booking)
@@ -194,7 +194,7 @@ class BookingController extends Controller
             return $this->fail($request, 'Passcode hanya bisa dibuat ulang untuk tamu yang sedang menginap.');
         }
 
-        return $this->done($request, 'Passcode baru: ' . $this->bookings->regeneratePasscode($booking->reservation));
+        return $this->done($request, $this->withLockWarning('Passcode baru: ' . $this->bookings->regeneratePasscode($booking->reservation)));
     }
 
     public function extend(Request $request, Booking $booking)
@@ -223,7 +223,7 @@ class BookingController extends Controller
 
         $to = $this->bookings->moveRoom($booking, (int) $request->room_id, $request->reason, $request->user()->id);
 
-        return $this->done($request, 'Tamu dipindah ke kamar ' . $to->room_number . '. Passcode tetap sama.');
+        return $this->done($request, $this->withLockWarning('Tamu dipindah ke kamar ' . $to->room_number . '. Passcode tetap sama.'));
     }
 
     public function addCharge(Request $request, Booking $booking)
@@ -263,6 +263,11 @@ class BookingController extends Controller
     public function invoice(Booking $booking, Invoice $invoice)
     {
         return $invoice->download($booking);
+    }
+
+    private function withLockWarning(string $message): string
+    {
+        return $this->bookings->lockWarning ? $message . "\n\n⚠ " . $this->bookings->lockWarning : $message;
     }
 
     private function canCheckIn(Booking $booking): bool

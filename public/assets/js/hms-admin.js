@@ -234,6 +234,58 @@
         window.bootstrap.Offcanvas.getOrCreateInstance(drawer).show();
     });
 
+    /* ---------------- Realtime (Reverb) ----------------
+       Staff get a toast for booking / room events. Pages that list that
+       data ([data-live-reload]) refresh themselves, but never while the
+       user has a drawer, modal or alert open, so no typing is lost. */
+
+    function busyUi() {
+        return !!document.querySelector('.offcanvas.show, .modal.show, .swal2-container');
+    }
+
+    var reloadTimer = null;
+    function scheduleReload(kind) {
+        var marker = document.querySelector('[data-live-reload]');
+        if (!marker || marker.getAttribute('data-live-reload').split(',').indexOf(kind) === -1) {
+            return;
+        }
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(function attempt() {
+            if (busyUi() || document.hidden) {
+                reloadTimer = setTimeout(attempt, 3000);
+                return;
+            }
+            window.location.reload();
+        }, 1500);
+    }
+
+    function toast(message, type) {
+        if (window.toastr) {
+            window.toastr[type || 'info'](message);
+        }
+    }
+
+    window.addEventListener('echo:ready', function () {
+        var channels = (document.body.getAttribute('data-hms-channels') || '').split(',').filter(Boolean);
+
+        if (channels.indexOf('frontdesk') !== -1) {
+            window.Echo.private('hms.frontdesk').listen('.booking.updated', function (e) {
+                var important = ['created', 'proof_uploaded', 'paid'].indexOf(e.action) !== -1;
+                toast(e.message + (e.guest ? ' — ' + e.guest : ''), important ? 'success' : 'info');
+                scheduleReload('booking');
+            });
+        }
+
+        if (channels.indexOf('housekeeping') !== -1) {
+            window.Echo.private('hms.housekeeping').listen('.room.updated', function (e) {
+                if (document.querySelector('[data-live-reload*="room"]')) {
+                    toast(e.message, 'info');
+                }
+                scheduleReload('room');
+            });
+        }
+    });
+
     /* ---------------- Centered detail modal ---------------- */
 
     document.addEventListener('click', function (event) {
