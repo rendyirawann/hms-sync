@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class RoomType extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
         'hotel_id', 'name', 'description', 'capacity', 'base_price', 'amenities', 'image', 'is_active',
     ];
@@ -18,10 +21,6 @@ class RoomType extends Model
         'is_active' => 'boolean',
     ];
 
-    public function hotel()
-    {
-        return $this->belongsTo(Hotel::class);
-    }
 
     public function rooms()
     {

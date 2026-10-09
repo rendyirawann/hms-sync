@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
@@ -11,10 +12,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class RateRule extends Model
 {
+    use BelongsToHotel;
+
     public const TYPES = ['percent' => 'Persen (%)', 'amount' => 'Tambah/kurang (Rp)', 'fixed' => 'Harga tetap (Rp)'];
 
     protected $fillable = [
-        'room_type_id', 'name', 'start_date', 'end_date', 'days_of_week', 'adjust_type', 'value', 'priority', 'is_active',
+        'hotel_id', 'room_type_id', 'name', 'start_date', 'end_date', 'days_of_week', 'adjust_type', 'value', 'priority', 'is_active',
     ];
 
     protected $casts = [

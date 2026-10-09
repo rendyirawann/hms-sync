@@ -3,7 +3,7 @@
 
 @section('content')
     <x-hms.toolbar title="Profil Hotel" section="Data Master">
-        <a href="{{ route('landing') }}" target="_blank" class="btn btn-sm btn-light"><i class="ki-outline ki-exit-right-corner fs-4"></i> Lihat website</a>
+        <a href="{{ route('hotels.show', $hotel) }}" target="_blank" class="btn btn-sm btn-light"><i class="ki-outline ki-exit-right-corner fs-4"></i> Lihat website</a>
     </x-hms.toolbar>
 
     <x-hms.content>
@@ -25,9 +25,19 @@
                     <div class="card card-flush">
                         <div class="card-header"><h3 class="card-title">Informasi hotel</h3></div>
                         <div class="card-body d-flex flex-column gap-5">
-                            <div>
-                                <label class="form-label required">Nama hotel</label>
-                                <input type="text" name="name" value="{{ $hotel->name }}" class="form-control form-control-solid">
+                            <div class="row g-5">
+                                <div class="col-md-6">
+                                    <label class="form-label required">Nama hotel</label>
+                                    <input type="text" name="name" value="{{ $hotel->name }}" class="form-control form-control-solid">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label required">Kota</label>
+                                    <input type="text" name="city" value="{{ $hotel->city }}" class="form-control form-control-solid">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Provinsi</label>
+                                    <input type="text" name="province" value="{{ $hotel->province }}" class="form-control form-control-solid">
+                                </div>
                             </div>
                             <div>
                                 <label class="form-label required">Alamat</label>
@@ -82,11 +92,21 @@
                                     <div class="form-text">Booking online belum dibayar dibatalkan otomatis. 0 = tidak ada batas.</div>
                                 </div>
                             </div>
-                            <div>
-                                <label class="form-label">Rekening transfer manual</label>
-                                <textarea name="bank_accounts" rows="3" class="form-control form-control-solid" placeholder="BCA 1234567890 a.n. PT Hotel&#10;Mandiri 0987654321 a.n. PT Hotel">{{ $hotel->bank_accounts }}</textarea>
-                                <div class="form-text">Ditampilkan ke tamu yang memilih transfer bank. Kosongkan untuk menyembunyikan opsi transfer manual.</div>
+                            <div class="row g-5">
+                                <div class="col-md-4">
+                                    <label class="form-label">Bank penerima setoran</label>
+                                    <input type="text" name="payout_bank" value="{{ $hotel->payout_bank }}" class="form-control form-control-solid" placeholder="mis. BCA">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Nomor rekening</label>
+                                    <input type="text" name="payout_account_number" value="{{ $hotel->payout_account_number }}" class="form-control form-control-solid">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Atas nama</label>
+                                    <input type="text" name="payout_account_name" value="{{ $hotel->payout_account_name }}" class="form-control form-control-solid">
+                                </div>
                             </div>
+                            <div class="form-text">Pembayaran online tamu diterima platform lalu disetor ke rekening ini (dikurangi komisi {{ (float) $hotel->commission_percent }}%).</div>
                         </div>
                     </div>
 

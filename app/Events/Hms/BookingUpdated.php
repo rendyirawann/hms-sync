@@ -45,7 +45,7 @@ class BookingUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 
     public function broadcastOn(): array
     {
-        $channels = [new PrivateChannel('hms.frontdesk')];
+        $channels = [new PrivateChannel('hms.hotel.' . $this->booking->hotel_id . '.frontdesk')];
 
         if ($this->booking->user_id) {
             $channels[] = new PrivateChannel('App.Models.User.' . $this->booking->user_id);

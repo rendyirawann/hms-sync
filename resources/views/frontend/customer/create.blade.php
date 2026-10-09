@@ -4,8 +4,8 @@
 @php $rp = fn ($v) => 'Rp ' . number_format((float) $v, 0, ',', '.'); @endphp
 
 @section('content')
-    <a href="{{ route('rooms.search', ['check_in' => $checkIn->toDateString(), 'check_out' => $checkOut->toDateString(), 'guests' => $guests]) }}"
-        class="inline-block text-sm font-bold text-blue-600 mb-6">&larr; Kembali ke pilihan kamar</a>
+    <a href="{{ route('hotels.show', ['hotel' => $hotel, 'check_in' => $checkIn->toDateString(), 'check_out' => $checkOut->toDateString(), 'guests' => $guests]) }}#kamar"
+        class="inline-block text-sm font-bold text-blue-600 mb-6">&larr; Kembali ke pilihan kamar {{ $hotel->name }}</a>
 
     <div class="grid lg:grid-cols-3 gap-8">
         <form method="POST" action="{{ route('customer.bookings.store', $roomType) }}" class="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/30 p-8 flex flex-col gap-6"

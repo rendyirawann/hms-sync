@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HousekeepingTask;
 use App\Models\Room;
 use App\Models\User;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -38,7 +39,7 @@ class HousekeepingController extends Controller
         return view('backend.hms.housekeeping.index', [
             'open' => $open,
             'history' => $history,
-            'staff' => User::role(StaffController::ROLES)->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'staff' => User::role(StaffController::ROLES)->where('hotel_id', Hotel::current()->id)->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'rooms' => Room::orderBy('room_number')->get(['id', 'room_number', 'status']),
         ]);
     }
@@ -46,9 +47,9 @@ class HousekeepingController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'room_id' => ['required', 'exists:rooms,id'],
+            'room_id' => ['required', Rule::exists('rooms', 'id')->where('hotel_id', Hotel::current()->id)],
             'type' => ['required', Rule::in(array_keys(HousekeepingTask::TYPES))],
-            'assigned_to' => ['nullable', 'exists:users,id'],
+            'assigned_to' => ['nullable', Rule::exists('users', 'id')->where('hotel_id', Hotel::current()->id)],
             'notes' => ['nullable', 'string', 'max:255'],
         ], [], ['room_id' => 'kamar', 'type' => 'jenis tugas', 'assigned_to' => 'petugas']);
 
@@ -66,7 +67,7 @@ class HousekeepingController extends Controller
 
     public function assign(Request $request, HousekeepingTask $task)
     {
-        $request->validate(['assigned_to' => ['nullable', 'exists:users,id']]);
+        $request->validate(['assigned_to' => ['nullable', Rule::exists('users', 'id')->where('hotel_id', Hotel::current()->id)]]);
         $task->update(['assigned_to' => $request->input('assigned_to') ?: $request->user()->id]);
 
         return $this->done($request, 'Petugas diperbarui.');

@@ -23,6 +23,11 @@ class HotelController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
+            'city' => ['required', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'payout_bank' => ['nullable', 'string', 'max:50'],
+            'payout_account_number' => ['nullable', 'string', 'max:50'],
+            'payout_account_name' => ['nullable', 'string', 'max:100'],
             'address' => ['required', 'string', 'max:500'],
             'description' => ['nullable', 'string', 'max:5000'],
             'phone' => ['nullable', 'string', 'max:30'],
@@ -34,7 +39,6 @@ class HotelController extends Controller
             'tax_percent' => ['required', 'numeric', 'between:0,100'],
             'service_percent' => ['required', 'numeric', 'between:0,100'],
             'payment_deadline_hours' => ['required', 'integer', 'between:0,720'],
-            'bank_accounts' => ['nullable', 'string', 'max:1000'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'clock_in_radius_m' => ['nullable', 'integer', 'between:10,100000'],
@@ -42,9 +46,9 @@ class HotelController extends Controller
             'late_grace_minutes' => ['required', 'integer', 'between:0,240'],
         ], [], [
             'tax_percent' => 'pajak', 'service_percent' => 'service charge', 'payment_deadline_hours' => 'batas waktu bayar',
-            'bank_accounts' => 'rekening bank', 'clock_in_radius_m' => 'radius clock-in', 'clock_in_ips' => 'IP clock-in',
+            'clock_in_radius_m' => 'radius clock-in', 'clock_in_ips' => 'IP clock-in',
             'late_grace_minutes' => 'toleransi terlambat',
-            'name' => 'nama hotel', 'address' => 'alamat', 'phone' => 'telepon',
+            'name' => 'nama hotel', 'city' => 'kota', 'province' => 'provinsi', 'address' => 'alamat', 'phone' => 'telepon',
             'check_in_time' => 'jam check-in', 'check_out_time' => 'jam check-out', 'image' => 'foto',
         ]);
 

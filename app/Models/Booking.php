@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
@@ -9,7 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Booking extends Model
 {
-    use LogsActivity;
+    use LogsActivity, BelongsToHotel;
 
     public const STATUSES = ['Pending', 'Paid', 'Confirmed', 'Cancelled', 'Completed', 'NoShow', 'Expired'];
 
@@ -27,7 +28,7 @@ class Booking extends Model
     public const HOLDING = ['Pending', 'Paid', 'Confirmed'];
 
     protected $fillable = [
-        'user_id', 'room_type_id', 'check_in_date', 'check_out_date', 'total_price', 'booking_code', 'status',
+        'hotel_id', 'user_id', 'room_type_id', 'check_in_date', 'check_out_date', 'total_price', 'booking_code', 'status',
         'guests', 'guest_phone', 'notes', 'cancel_reason', 'source', 'guest_name', 'guest_email',
         'room_total', 'discount', 'service_charge', 'tax', 'promo_code_id', 'payment_due_at', 'created_by',
     ];
@@ -147,5 +148,11 @@ class Booking extends Model
     public function getBalanceDueAttribute(): float
     {
         return round(max(0, $this->grand_total - $this->amount_paid), 2);
+    }
+
+    /** hotel_id follows the parent roomtype. */
+    protected function resolveHotelId(): ?int
+    {
+        return $this->room_type_id ? RoomType::withoutGlobalScopes()->whereKey($this->room_type_id)->value('hotel_id') : null;
     }
 }

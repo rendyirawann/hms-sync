@@ -4,7 +4,7 @@
 @php $photos = collect([$roomType->image_url])->merge($roomType->images->map->url); @endphp
 
 @section('content')
-    <a href="{{ route('landing') }}#kamar" class="inline-block text-sm font-bold text-blue-600 mb-6">&larr; Semua kamar</a>
+    <a href="{{ route('hotels.show', $hotel) }}#kamar" class="inline-block text-sm font-bold text-blue-600 mb-6">&larr; {{ $hotel->name }}</a>
 
     <div class="grid lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2">
@@ -52,7 +52,7 @@
             <p class="text-xs font-bold text-slate-400">Mulai dari</p>
             <p class="text-3xl font-black text-orange-500 mb-1">Rp {{ number_format($fromPrice, 0, ',', '.') }}<span class="text-sm text-slate-400 font-bold">/malam</span></p>
             <p class="text-xs text-slate-400 mb-6">Belum termasuk pajak {{ (float) $hotel->tax_percent }}% &amp; service {{ (float) $hotel->service_percent }}%.</p>
-            @include('frontend.partials.search-form')
+            @include('frontend.partials.search-form', ['searchHotel' => $hotel])
         </aside>
     </div>
 @endsection

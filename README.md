@@ -1,6 +1,9 @@
 # HMS Sync
 
-Sistem manajemen hotel (Hotel Management System) untuk **satu properti**: website pemesanan untuk tamu, panel front desk untuk resepsionis, serta pengelolaan kamar, harga, pegawai, dan laporan untuk manajemen.
+**Marketplace hotel** (seperti Traveloka/Agoda) sekaligus sistem manajemen hotel (HMS):
+- **Tamu** mencari dan memesan kamar di banyak hotel mitra.
+- **Setiap hotel** mengelola kamar, harga, front desk, housekeeping, pegawai, dan laporannya sendiri. Datanya terisolasi dari hotel lain.
+- **Platform** menyetujui hotel, menerima pembayaran online tamu, lalu menyetorkannya ke tiap hotel setelah dipotong komisi.
 
 Dibangun dengan **Laravel 12**, **PostgreSQL**, panel admin **Metronic (Bootstrap 5)**, dan halaman publik **Tailwind CSS v4**.
 
@@ -22,6 +25,17 @@ Dibangun dengan **Laravel 12**, **PostgreSQL**, panel admin **Metronic (Bootstra
 ---
 
 ## Fitur
+
+### Marketplace & platform
+- **Beranda**: daftar hotel mitra, kota populer, dan ulasan terbaru. **Pencarian** lintas hotel per kota/nama hotel + tanggal + jumlah tamu, diurutkan dari harga termurah yang masih tersedia.
+- **Halaman per hotel** (`/hotel/{slug}`): foto, info, kamar, harga total untuk tanggal yang dipilih, dan ulasan.
+- **Pendaftaran mitra** (`/mitra/daftar`): pemilik hotel mendaftar, akunnya langsung aktif setelah email diverifikasi, dan bisa menyiapkan kamar. Hotel baru tampil di website setelah **disetujui platform**. Persetujuan otomatis bisa diaktifkan.
+- **Panel Platform (Superadmin)**:
+  - Hotel mitra: tambah hotel beserta akun pemiliknya, setujui/tolak, nonaktifkan, atur komisi dan rekening setoran.
+  - Tombol **Kelola** untuk masuk ke panel hotel mana pun.
+  - **Verifikasi transfer**: rekening transfer milik platform.
+  - **Setoran (settlement)** per periode: pendapatan kamar × komisi. Uang yang diterima platform dikurangi komisi menjadi setoran. Tunai yang diterima hotel ikut dihitung, dan setoran minus berarti hotel berutang komisi.
+- **Isolasi data per hotel**: staf hanya melihat data hotelnya sendiri, termasuk saat membuka URL dengan ID milik hotel lain (404). Validasi juga menolak referensi ke data hotel lain. Channel realtime dipisah per hotel.
 
 ### Untuk tamu (website publik)
 - Landing page berisi data hotel, tipe kamar dengan harga "mulai dari", galeri fasilitas, dan ulasan tamu.
@@ -104,6 +118,13 @@ Inventaris dijual **per tipe kamar**. Nomor kamar baru ditetapkan saat check-in,
 
 ## Peran & hak akses
 
+| Peran | Lingkup |
+|---|---|
+| **Superadmin** | Platform: semua hotel, persetujuan, komisi, setoran, verifikasi transfer, user & settings sistem. Bisa "Kelola" hotel mana pun. |
+| **admin** | Pemilik/admin **satu hotel** (`users.hotel_id`). |
+| **Pegawai** | Staf **satu hotel**. |
+| **Customer** | Tamu: memesan di hotel mana pun. |
+
 | Permission | Superadmin | admin | Pegawai | Customer |
 |---|:-:|:-:|:-:|:-:|
 | `hms.master`: hotel, kamar, harga, galeri, ulasan, pegawai, shift | ✓ | ✓ | – | – |
@@ -177,19 +198,22 @@ php artisan db:seed --class=DemoSeeder
 ```
 
 Isi data demo:
-- Hotel contoh, 3 tipe kamar, dan 9 kamar.
-- Aturan harga weekend dan promo `HEMAT10`.
-- 115 booking selama 60 hari terakhir sampai 21 hari ke depan, mencakup semua status: tamu sedang menginap, kedatangan hari ini, menunggu bayar, batal, dan no-show.
-- Pembayaran (Tripay, transfer, dan tunai), ulasan, tugas housekeeping, serta jadwal shift dua pegawai.
+- **Marketplace:** 3 hotel tayang (Bandung, Yogyakarta, Bali) dan 1 hotel menunggu persetujuan (Malang).
+- **Per hotel:** tipe kamar, kamar, harga weekend, promo `HEMAT10`, dan shift.
+- **Promo platform:** `HMSHEMAT`.
+- **Aktivitas 2 bulan:** 278 booking di semua status, 10 tamu sedang menginap, pembayaran, 91 ulasan, tugas housekeeping, dan jadwal pegawai.
+- **Setoran bulan lalu** untuk tiap hotel.
 
-Seeder bisa dijalankan ulang: data demo lama (kode `DMO-…`) diganti. **Jangan dijalankan di database produksi.**
+Seeder ini bisa dijalankan ulang (booking `DMO-…` diganti). **Jangan dijalankan di database produksi.**
 
 | Akun (password `Password123!`) | Peran |
 |---|---|
-| `admin@nusantara.test` | admin hotel |
-| `rina@nusantara.test` | pegawai front desk |
-| `dedi@nusantara.test` | pegawai housekeeping |
+| `admin@nusantara.test`, `rina@nusantara.test`, `dedi@nusantara.test` | admin & pegawai Hotel Nusantara Bandung |
+| `admin@griya.test`, `sari@griya.test` | admin & pegawai Griya Malioboro (Yogyakarta) |
+| `admin@ombak.test`, `made@ombak.test` | admin & pegawai Ombak Resort Canggu (Bali) |
+| `pemilik@wismaapel.test` | pemilik hotel yang menunggu persetujuan |
 | `budi@tamu.test`, `tamu1…tamu12@tamu.test` | tamu |
+| `SUPERADMIN_EMAIL` | platform (dibuat `db:seed`) |
 
 Setelah login sebagai admin di database asli, isi data awal secara berurutan:
 1. **Data Master → Profil Hotel**

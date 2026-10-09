@@ -1,5 +1,5 @@
 @extends('frontend.layout')
-@section('title', 'Reservasi ' . $booking->booking_code . ' - ' . $hotel->name)
+@section('title', 'Reservasi ' . $booking->booking_code . ' - ' . $brand['name'])
 
 @php
     $rp = fn ($v) => 'Rp ' . number_format((float) $v, 0, ',', '.');
@@ -38,6 +38,7 @@
                 @endif
 
                 <dl class="grid sm:grid-cols-2 gap-4 text-sm">
+                    <div><dt class="text-slate-400 font-bold">Hotel</dt><dd class="font-bold text-slate-800"><a href="{{ route('hotels.show', $hotel) }}" class="hover:text-blue-600">{{ $hotel->name }}</a></dd></div>
                     <div><dt class="text-slate-400 font-bold">Tipe kamar</dt><dd class="font-bold text-slate-800">{{ $booking->roomType->name }}</dd></div>
                     <div><dt class="text-slate-400 font-bold">Tamu</dt><dd class="font-bold text-slate-800">{{ $booking->guests }} orang</dd></div>
                     <div><dt class="text-slate-400 font-bold">Check-in</dt><dd class="font-bold text-slate-800">{{ $booking->check_in_date->translatedFormat('l, d M Y') }} &middot; mulai {{ substr($hotel->check_in_time, 0, 5) }}</dd></div>
@@ -88,25 +89,25 @@
                                         </label>
                                     @endforeach
                                 </div>
-                                <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-2xl font-extrabold">Bayar {{ $rp($booking->balance_due) }}</button>
+                                <button type="submit" class="hms-btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-2xl font-extrabold">Bayar {{ $rp($booking->balance_due) }}</button>
                             </form>
                         @endif
 
-                        @if ($hotel->bank_accounts)
+                        @if ($bankAccounts)
                             <details class="rounded-2xl border border-slate-200 p-4" @if (! $tripayEnabled || ! $channels) open @endif>
                                 <summary class="font-bold text-slate-700 cursor-pointer">Transfer bank manual</summary>
                                 <p class="text-sm text-slate-600 mt-3">Transfer <b>{{ $rp($booking->balance_due) }}</b> ke salah satu rekening berikut, lalu unggah bukti transfernya:</p>
-                                <pre class="text-sm font-bold text-slate-800 bg-slate-50 rounded-xl p-3 mt-2 whitespace-pre-wrap font-sans">{{ $hotel->bank_accounts }}</pre>
+                                <pre class="text-sm font-bold text-slate-800 bg-slate-50 rounded-xl p-3 mt-2 whitespace-pre-wrap font-sans">{{ $bankAccounts }}</pre>
                                 <form method="POST" action="{{ route('customer.bookings.proof', $booking) }}" enctype="multipart/form-data" class="mt-4 flex flex-wrap gap-3 items-center"
                                     onsubmit="var b=this.querySelector('[type=submit]'); if(b.disabled){return false;} b.disabled=true; b.textContent='Mengunggah...';">
                                     @csrf
                                     <input type="file" name="proof" accept="image/*,application/pdf" required class="text-sm">
-                                    <button type="submit" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-black">Kirim bukti</button>
+                                    <button type="submit" class="hms-btn bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-black">Kirim bukti</button>
                                 </form>
                             </details>
                         @endif
 
-                        @if ((! $tripayEnabled || ! $channels) && ! $hotel->bank_accounts)
+                        @if ((! $tripayEnabled || ! $channels) && ! $bankAccounts)
                             <p class="text-sm text-slate-500">Silakan hubungi hotel untuk instruksi pembayaran.</p>
                         @endif
                     @endif

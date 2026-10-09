@@ -4,7 +4,7 @@
     <!--begin::Header-->
     <div class="d-flex align-items-center justify-content-between gap-2 px-5 pt-5 pb-4">
         <a href="{{ route('dashboard') }}" class="app-brand">
-            <img src="{{ $brand['logo_url'] }}" alt="" class="app-brand__mark" width="34" height="34" />
+            <img src="{{ $brand['logo_url'] }}" alt="" class="app-brand__mark hms-logo" width="34" height="34" />
             <span class="min-w-0">
                 <span class="app-brand__name d-block">{{ $brand['name'] }}</span>
                 <span class="app-brand__tagline">{{ $brand['tagline'] }}</span>
@@ -36,11 +36,12 @@
             </div>
 
             @php
-                $hmsLinks = array_filter([
+                $hmsLinks = ! \App\Models\Hotel::current() ? [] : array_filter([
                     ['hms.bookings.index', 'hms.bookings.index', 'ki-calendar-tick', 'Reservasi', 'hms.booking'],
                     ['hms.bookings.calendar', 'hms.bookings.calendar', 'ki-calendar-8', 'Kalender Okupansi', 'hms.booking'],
                     ['hms.housekeeping.index', 'hms.housekeeping.*', 'ki-brush', 'Housekeeping', 'hms.housekeeping'],
                     ['hms.reports.index', 'hms.reports.*', 'ki-chart-line-up', 'Laporan', 'hms.reports'],
+                    ['hms.settlements.index', 'hms.settlements.*', 'ki-dollar', 'Setoran dari Platform', 'hms.reports'],
                     ['hms.my-shift.index', 'hms.my-shift.*', 'ki-check-circle', 'Shift Saya', 'hms.my_shift'],
                     ['hms.roster.index', 'hms.roster.*', 'ki-calendar', 'Jadwal Pegawai', 'hms.roster'],
                     ['hms.hotel.edit', 'hms.hotel.*', 'ki-bank', 'Profil Hotel', 'hms.master'],
@@ -53,6 +54,25 @@
                     ['hms.shifts.index', 'hms.shifts.*', 'ki-time', 'Master Shift', 'hms.master'],
                 ], fn ($link) => auth()->user()->can($link[4]));
             @endphp
+
+            @role('Superadmin')
+                <div class="menu-item pt-5">
+                    <div class="menu-content"><span class="menu-heading fw-bold text-uppercase fs-7">Platform</span></div>
+                </div>
+                @foreach ([
+                    ['platform.hotels.index', 'platform.hotels.*', 'ki-bank', 'Hotel Mitra'],
+                    ['platform.payments.index', 'platform.payments.*', 'ki-wallet', 'Verifikasi Transfer'],
+                    ['platform.settlements.index', 'platform.settlements.*', 'ki-dollar', 'Setoran ke Hotel'],
+                    ['platform.settings.edit', 'platform.settings.*', 'ki-setting-3', 'Pengaturan Platform'],
+                ] as [$route, $pattern, $icon, $label])
+                    <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs($pattern) ? 'active' : '' }}" href="{{ route($route) }}">
+                            <span class="menu-icon"><i class="ki-outline {{ $icon }} fs-3"></i></span>
+                            <span class="menu-title">{{ $label }}</span>
+                        </a>
+                    </div>
+                @endforeach
+            @endrole
 
             @if ($hmsLinks)
                 <div class="menu-item pt-5">

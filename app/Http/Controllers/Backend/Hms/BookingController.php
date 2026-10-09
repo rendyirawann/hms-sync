@@ -12,6 +12,7 @@ use App\Models\RoomType;
 use App\Services\BookingService;
 use App\Services\Invoice;
 use App\Services\RoomAvailability;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -78,7 +79,7 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'room_type_id' => ['required', Rule::exists('room_types', 'id')->where('is_active', true)],
+            'room_type_id' => ['required', Rule::exists('room_types', 'id')->where('is_active', true)->where('hotel_id', Hotel::current()->id)],
             'check_in' => ['required', 'date', 'after_or_equal:today'],
             'check_out' => ['required', 'date', 'after:check_in'],
             'guests' => ['required', 'integer', 'min:1', 'max:20'],
@@ -106,7 +107,8 @@ class BookingController extends Controller
     public function markPaid(Request $request, Booking $booking)
     {
         $data = $request->validate([
-            'method' => ['required', Rule::in(['cash', 'transfer'])],
+            // Transfers go to the platform account and are verified there.
+            'method' => ['required', Rule::in($request->user()->hasRole('Superadmin') ? ['cash', 'transfer'] : ['cash'])],
             'amount' => ['nullable', 'numeric', 'min:1'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);

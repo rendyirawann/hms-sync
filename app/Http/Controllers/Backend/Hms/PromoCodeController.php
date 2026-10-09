@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend\Hms;
 use App\Http\Controllers\Backend\Hms\Concerns\RespondsWithAlert;
 use App\Http\Controllers\Controller;
 use App\Models\PromoCode;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -44,7 +45,7 @@ class PromoCodeController extends Controller
         $request->merge(['code' => strtoupper(trim((string) $request->code))]);
 
         $data = $request->validate([
-            'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('promo_codes')->ignore($promo?->id)],
+            'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('promo_codes')->where('hotel_id', Hotel::current()->id)->ignore($promo?->id)],
             'type' => ['required', Rule::in(['percent', 'amount'])],
             'value' => ['required', 'numeric', 'min:0', $request->type === 'percent' ? 'max:100' : 'max:100000000'],
             'max_discount' => ['nullable', 'numeric', 'min:0'],

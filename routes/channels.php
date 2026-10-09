@@ -26,8 +26,12 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return hash_equals((string) $user->id, (string) $id);
 });
 
+// A hotel's staff only ever hear their own hotel; the platform hears all.
+$worksAt = fn ($user, $hotelId) => $user->hasRole('Superadmin') || (int) $user->hotel_id === (int) $hotelId;
+
 // Front desk: new bookings, payments, check-in/out (staff with booking access).
-Broadcast::channel('hms.frontdesk', fn ($user) => $user->can('hms.booking'));
+Broadcast::channel('hms.hotel.{hotelId}.frontdesk', fn ($user, $hotelId) => $worksAt($user, $hotelId) && $user->can('hms.booking'));
 
 // Housekeeping board and room status.
-Broadcast::channel('hms.housekeeping', fn ($user) => $user->can('hms.housekeeping') || $user->can('hms.booking'));
+Broadcast::channel('hms.hotel.{hotelId}.housekeeping', fn ($user, $hotelId) => $worksAt($user, $hotelId)
+    && ($user->can('hms.housekeeping') || $user->can('hms.booking')));

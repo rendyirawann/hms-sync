@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Events\Hms\BookingUpdated;
 use App\Events\Hms\RoomBoardUpdated;
 use App\Models\Booking;
+use App\Models\Hotel;
+use App\Models\Settlement;
 use App\Models\BookingCharge;
 use App\Models\EmployeeShift;
 use App\Models\HousekeepingTask;
@@ -17,6 +19,7 @@ use App\Models\RoomType;
 use App\Models\Shift;
 use App\Models\User;
 use App\Services\Pricing;
+use App\Services\SettlementService;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Seeder;
@@ -50,49 +53,71 @@ class DemoOperationsSeeder extends Seeder
     /** room_id => [date => true] nights already taken by a stay with a room. */
     private array $occupied = [];
 
-    private array $counts = ['bookings' => 0, 'in_house' => 0, 'reviews' => 0, 'tasks' => 0, 'shifts' => 0];
+    private array $counts = ['bookings' => 0, 'in_house' => 0, 'reviews' => 0, 'tasks' => 0, 'shifts' => 0, 'settlements' => 0];
 
-    public function run(Pricing $pricing): void
+    public function run(Pricing $pricing, SettlementService $settlements): void
     {
         // Seeding must not send emails, websocket events or lock commands.
         Event::fake([BookingUpdated::class, RoomBoardUpdated::class]);
         mt_srand(20261009);
 
         $this->clearPreviousDemo();
-
         $guests = $this->guests();
-        $types = RoomType::with('rooms')->where('is_active', true)->get();
-        $promo = PromoCode::where('code', 'HEMAT10')->first();
-        $admin = User::where('email', 'admin@nusantara.test')->first();
-
         $today = today();
-        foreach (CarbonPeriod::create($today->copy()->subDays(self::PAST_DAYS), $today->copy()->addDays(self::FUTURE_DAYS)) as $day) {
-            // Busier on Friday/Saturday, like a real city hotel.
-            $arrivals = $day->isFriday() || $day->isSaturday() ? mt_rand(1, 3) : mt_rand(0, 2);
 
-            for ($i = 0; $i < $arrivals; $i++) {
-                $this->createStay($pricing, $types[mt_rand(0, $types->count() - 1)], $day->copy(), mt_rand(1, 3), $guests[array_rand($guests)], $promo, $admin);
+        $hotels = Hotel::listed()->orderBy('id')->get();
+        foreach ($hotels as $n => $hotel) {
+            $types = RoomType::withoutGlobalScopes()->where('hotel_id', $hotel->id)->where('is_active', true)
+                ->with(['rooms' => fn ($q) => $q->withoutGlobalScopes()])->get();
+            if ($types->isEmpty()) {
+                continue;
             }
+            $promo = PromoCode::withoutGlobalScopes()->where('hotel_id', $hotel->id)->where('code', 'HEMAT10')->first();
+            $admin = $hotel->owner;
+            $inHouseBefore = $this->counts['in_house'];
+
+            foreach (CarbonPeriod::create($today->copy()->subDays(self::PAST_DAYS), $today->copy()->addDays(self::FUTURE_DAYS)) as $day) {
+                // Busier on Friday/Saturday, like a real hotel; smaller hotels get fewer guests.
+                $max = max(1, (int) round($types->sum(fn ($t) => $t->rooms->count()) / 4));
+                $arrivals = $day->isFriday() || $day->isSaturday() ? mt_rand(1, $max + 1) : mt_rand(0, $max);
+
+                for ($i = 0; $i < $arrivals; $i++) {
+                    $this->createStay($pricing, $types[mt_rand(0, $types->count() - 1)], $day->copy(), mt_rand(1, 3), $guests[array_rand($guests)], $promo, $admin);
+                }
+            }
+
+            $this->ensureTodayHasActivity($pricing, $types, $guests, $admin, $inHouseBefore, $n === 0);
+            $staff = User::role('Pegawai')->where('hotel_id', $hotel->id)->orderBy('email')->get();
+            $this->roster($hotel, $staff);
+            $this->housekeeping($hotel, $admin, $staff->last());
         }
 
-        $this->ensureTodayHasActivity($pricing, $types, $guests, $admin);
-        $this->roster();          // creates the housekeeping staff account used below
-        $this->housekeeping($admin);
+        // Last month is settled: the first hotel already paid out, the others still open.
+        $from = $today->copy()->subMonthNoOverflow()->startOfMonth();
+        $to = $today->copy()->subMonthNoOverflow()->endOfMonth()->startOfDay();
+        foreach ($hotels as $n => $hotel) {
+            $settlement = $settlements->create($hotel, $from, $to);
+            if ($settlement && $n === 0) {
+                $settlement->update(['status' => 'paid', 'paid_at' => now()->subDays(3), 'reference' => 'TRF-DEMO-' . $from->format('Ym')]);
+            }
+            $this->counts['settlements'] += $settlement ? 1 : 0;
+        }
 
         $this->command?->info(sprintf(
-            'Data operasional demo: %d booking (%d tamu sedang menginap), %d ulasan, %d tugas housekeeping, %d jadwal shift.',
-            $this->counts['bookings'], $this->counts['in_house'], $this->counts['reviews'], $this->counts['tasks'], $this->counts['shifts']
+            'Data operasional demo (%d hotel): %d booking (%d tamu sedang menginap), %d ulasan, %d tugas housekeeping, %d jadwal shift, %d setoran.',
+            $hotels->count(), $this->counts['bookings'], $this->counts['in_house'], $this->counts['reviews'], $this->counts['tasks'], $this->counts['shifts'], $this->counts['settlements']
         ));
     }
 
     private function clearPreviousDemo(): void
     {
-        $ids = Booking::where('booking_code', 'like', 'DMO-%')->pluck('id');
+        $ids = Booking::withoutGlobalScopes()->where('booking_code', 'like', 'DMO-%')->pluck('id');
         // Payments, reservations, charges and reviews cascade.
-        Booking::whereIn('id', $ids)->delete();
-        HousekeepingTask::where('notes', 'like', '[demo]%')->delete();
-        EmployeeShift::whereIn('user_id', User::whereIn('email', ['rina@nusantara.test', 'dedi@nusantara.test'])->pluck('id'))->delete();
-        Room::query()->update(['status' => 'Available', 'lock_code_ref' => null]);
+        Booking::withoutGlobalScopes()->whereIn('id', $ids)->delete();
+        Settlement::withoutGlobalScopes()->whereDoesntHave('bookings', fn ($q) => $q->withoutGlobalScopes())->delete();
+        HousekeepingTask::withoutGlobalScopes()->where('notes', 'like', '[demo]%')->delete();
+        EmployeeShift::withoutGlobalScopes()->whereIn('user_id', User::role('Pegawai')->pluck('id'))->delete();
+        Room::withoutGlobalScopes()->update(['status' => 'Available', 'lock_code_ref' => null]);
     }
 
     /** @return array<int, User> */
@@ -320,15 +345,15 @@ class DemoOperationsSeeder extends Seeder
         }
     }
 
-    /** Guarantee the "today" screens have something to show. */
-    private function ensureTodayHasActivity(Pricing $pricing, $types, array $guests, ?User $admin): void
+    /** Guarantee the "today" screens of each hotel have something to show. */
+    private function ensureTodayHasActivity(Pricing $pricing, $types, array $guests, ?User $admin, int $inHouseBefore, bool $withBudi): void
     {
         $today = today();
         $pick = fn () => $types[mt_rand(0, $types->count() - 1)];
         $guest = fn () => $guests[array_rand($guests)];
 
         // Guests in house right now (started yesterday or today).
-        for ($try = 0; $this->counts['in_house'] < 4 && $try < 20; $try++) {
+        for ($try = 0; $this->counts['in_house'] - $inHouseBefore < 2 && $try < 20; $try++) {
             $this->createStay($pricing, $pick(), $today->copy()->subDays(mt_rand(0, 1)), mt_rand(2, 3), $guest(), null, $admin, 'Confirmed');
         }
 
@@ -337,19 +362,19 @@ class DemoOperationsSeeder extends Seeder
         $this->createStay($pricing, $pick(), $today->copy(), mt_rand(1, 2), $guest(), null, $admin, 'Paid', arrived: false);
 
         // Budi has a booking waiting for payment, to try the payment page.
-        if ($budi = User::where('email', 'budi@tamu.test')->first()) {
+        if ($withBudi && ($budi = User::where('email', 'budi@tamu.test')->first())) {
             $this->createStay($pricing, $types->first(), $today->copy()->addDays(5), 2, $budi, null, $admin, 'Pending');
         }
     }
 
-    private function housekeeping(?User $admin): void
+    private function housekeeping(Hotel $hotel, ?User $admin, ?User $staff): void
     {
-        $staff = User::where('email', 'dedi@nusantara.test')->first();
+        $rooms = fn () => Room::withoutGlobalScopes()->where('hotel_id', $hotel->id);
 
         // Rooms vacated today/yesterday still need cleaning.
-        $recent = Reservation::where('status', 'Completed')
+        $recent = Reservation::withoutGlobalScopes()->where('hotel_id', $hotel->id)->where('status', 'Completed')
             ->whereHas('booking', fn ($q) => $q->where('booking_code', 'like', 'DMO-%')->whereBetween('check_out_date', [today()->subDay(), today()]))
-            ->with('room')
+            ->with(['room' => fn ($q) => $q->withoutGlobalScopes()])
             ->get()
             ->unique('room_id');
 
@@ -372,8 +397,8 @@ class DemoOperationsSeeder extends Seeder
         }
 
         // Make sure the board shows open cleaning work.
-        $open = HousekeepingTask::where('notes', 'like', '[demo]%')->where('status', '!=', 'done')->count();
-        foreach (Room::where('status', 'Available')->whereDoesntHave('activeReservation')->orderBy('room_number')->limit(max(0, 2 - $open))->get() as $i => $room) {
+        $open = HousekeepingTask::withoutGlobalScopes()->where('hotel_id', $hotel->id)->where('notes', 'like', '[demo]%')->where('status', '!=', 'done')->count();
+        foreach ($rooms()->where('status', 'Available')->whereDoesntHave('activeReservation')->orderBy('room_number')->limit(max(0, 2 - $open))->get() as $i => $room) {
             $room->update(['status' => 'Cleaning']);
             HousekeepingTask::create([
                 'room_id' => $room->id,
@@ -388,7 +413,7 @@ class DemoOperationsSeeder extends Seeder
         }
 
         // A room out of order.
-        $broken = Room::where('status', 'Available')->whereDoesntHave('activeReservation')->orderByDesc('room_number')->first();
+        $broken = $rooms()->where('status', 'Available')->whereDoesntHave('activeReservation')->orderByDesc('room_number')->first();
         if ($broken) {
             $broken->update(['status' => 'Maintenance']);
             HousekeepingTask::create([
@@ -399,7 +424,7 @@ class DemoOperationsSeeder extends Seeder
         }
 
         // History for the "Riwayat" table.
-        foreach (Room::inRandomOrder()->limit(6)->get() as $room) {
+        foreach ($rooms()->inRandomOrder()->limit(4)->get() as $room) {
             $start = now()->subDays(mt_rand(1, 6))->setTime(mt_rand(10, 15), mt_rand(0, 59));
             HousekeepingTask::create([
                 'room_id' => $room->id, 'type' => 'checkout', 'status' => 'done', 'assigned_to' => $staff?->id,
@@ -410,15 +435,10 @@ class DemoOperationsSeeder extends Seeder
         }
     }
 
-    private function roster(): void
+    private function roster(Hotel $hotel, $staff): void
     {
-        $dedi = User::firstOrCreate(['email' => 'dedi@nusantara.test'], ['name' => 'Dedi Housekeeping', 'password' => 'Password123!', 'is_active' => true]);
-        $dedi->forceFill(['email_verified_at' => $dedi->email_verified_at ?? now()])->save();
-        $dedi->syncRoles(['Pegawai']);
-
-        $staff = User::whereIn('email', ['rina@nusantara.test', 'dedi@nusantara.test'])->get();
-        $shifts = Shift::orderBy('start_time')->get();
-        if ($shifts->isEmpty()) {
+        $shifts = Shift::withoutGlobalScopes()->where('hotel_id', $hotel->id)->orderBy('start_time')->get();
+        if ($shifts->isEmpty() || $staff->isEmpty()) {
             return;
         }
 
@@ -428,7 +448,7 @@ class DemoOperationsSeeder extends Seeder
                     continue; // day off
                 }
                 $shift = $shifts[($day->weekOfYear + $i) % min(2, $shifts->count())]; // Pagi / Siang rotation
-                $entry = new EmployeeShift(['user_id' => $person->id, 'shift_id' => $shift->id, 'date' => $day->toDateString(), 'status' => 'Pending']);
+                $entry = new EmployeeShift(['hotel_id' => $hotel->id, 'user_id' => $person->id, 'shift_id' => $shift->id, 'date' => $day->toDateString(), 'status' => 'Pending']);
 
                 if ($day->lt(today())) {
                     if (mt_rand(1, 15) === 1) {

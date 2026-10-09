@@ -14,6 +14,37 @@
         </a>
     </div>
 
+    @role('Superadmin')
+        <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
+            class="menu-item menu-lg-down-accordion me-lg-2 {{ request()->routeIs('platform.*') ? 'here show menu-here-bg' : '' }}">
+            <span class="menu-link py-3">
+                <span class="menu-icon"><i class="ki-duotone ki-abstract-26 fs-3"><span class="path1"></span><span class="path2"></span></i></span>
+                <span class="menu-title">Platform</span>
+                @php $pendingHotels = \App\Models\Hotel::where('approval_status', 'pending')->count(); @endphp
+                @if ($pendingHotels)
+                    <span class="badge badge-circle badge-warning ms-2">{{ $pendingHotels }}</span>
+                @endif
+                <span class="menu-arrow d-lg-none"></span>
+            </span>
+            <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown py-4 w-250px">
+                @foreach ([
+                    ['platform.hotels.index', 'platform.hotels.*', 'ki-bank', 'Hotel Mitra'],
+                    ['platform.payments.index', 'platform.payments.*', 'ki-wallet', 'Verifikasi Transfer'],
+                    ['platform.settlements.index', 'platform.settlements.*', 'ki-dollar', 'Setoran ke Hotel'],
+                    ['platform.settings.edit', 'platform.settings.*', 'ki-setting-3', 'Pengaturan Platform'],
+                ] as [$route, $pattern, $icon, $label])
+                    <div class="menu-item">
+                        <a class="menu-link {{ request()->routeIs($pattern) ? 'active' : '' }}" href="{{ route($route) }}">
+                            <span class="menu-icon"><i class="ki-outline {{ $icon }} fs-4"></i></span>
+                            <span class="menu-title">{{ $label }}</span>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endrole
+
+    @if (\App\Models\Hotel::current())
     @canany(['hms.booking', 'hms.housekeeping', 'hms.reports'])
         <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"
             class="menu-item menu-lg-down-accordion me-lg-2 {{ request()->routeIs('hms.bookings.*', 'hms.housekeeping.*', 'hms.reports.*') ? 'here show menu-here-bg' : '' }}">
@@ -29,6 +60,7 @@
                     ['hms.housekeeping.index', 'hms.housekeeping.*', 'ki-brush', 'Housekeeping', 'hms.housekeeping'],
                     ['hms.reports.index', 'hms.reports.index', 'ki-chart-line-up', 'Laporan Hotel', 'hms.reports'],
                     ['hms.reports.shifts', 'hms.reports.shifts', 'ki-time', 'Rekap Shift', 'hms.reports'],
+                    ['hms.settlements.index', 'hms.settlements.*', 'ki-dollar', 'Setoran dari Platform', 'hms.reports'],
                 ] as [$route, $pattern, $icon, $label, $ability])
                     @can($ability)
                         <div class="menu-item">
@@ -101,6 +133,7 @@
             </div>
         </div>
     @endcanany
+    @endif
 
     @role('Superadmin|superadmin')
         <div data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start"

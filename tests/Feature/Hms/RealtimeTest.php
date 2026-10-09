@@ -29,7 +29,7 @@ class RealtimeTest extends HmsTestCase
             $channels = collect($e->broadcastOn())->map->name->all();
 
             return $e->action === 'created'
-                && in_array('private-hms.frontdesk', $channels, true)
+                && in_array('private-hms.hotel.' . $e->booking->hotel_id . '.frontdesk', $channels, true)
                 && in_array('private-App.Models.User.' . $guest->id, $channels, true);
         });
 
@@ -63,9 +63,11 @@ class RealtimeTest extends HmsTestCase
 
     public function test_frontdesk_channel_requires_booking_permission(): void
     {
-        $authorize = Broadcast::driver()->getChannels()['hms.frontdesk'];
+        $authorize = Broadcast::driver()->getChannels()['hms.hotel.{hotelId}.frontdesk'];
+        $other = \App\Models\Hotel::create(['name' => 'Hotel Lain', 'address' => 'x']);
 
-        $this->assertTrue((bool) $authorize($this->user('Pegawai')));
-        $this->assertFalse((bool) $authorize($this->user('Customer')));
+        $this->assertTrue((bool) $authorize($this->user('Pegawai'), $this->hotel->id));
+        $this->assertFalse((bool) $authorize($this->user('Pegawai'), $other->id), 'Staff never hear another hotel.');
+        $this->assertFalse((bool) $authorize($this->user('Customer'), $this->hotel->id));
     }
 }

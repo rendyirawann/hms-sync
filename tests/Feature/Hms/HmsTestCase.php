@@ -49,12 +49,25 @@ abstract class HmsTestCase extends TestCase
         Room::create(['room_type_id' => $this->type->id, 'room_number' => '101', 'status' => 'Available']);
     }
 
+    /** Hotel staff (admin / Pegawai) belong to the test hotel unless told otherwise. */
     protected function user(string $role, array $attributes = []): User
     {
+        if (in_array($role, ['admin', 'Pegawai'], true) && ! array_key_exists('hotel_id', $attributes)) {
+            $attributes['hotel_id'] = $this->hotel->id;
+        }
+
         $user = User::factory()->create($attributes + ['is_active' => true]);
         $user->assignRole($role);
 
         return $user;
+    }
+
+    /** A Superadmin who has opened a hotel's panel with "Kelola". */
+    protected function superadminIn(?Hotel $hotel = null): User
+    {
+        $this->withSession([\App\Http\Middleware\ResolveHotelContext::SESSION_KEY => ($hotel ?? $this->hotel)->id]);
+
+        return $this->user('Superadmin');
     }
 
     protected function addRoom(string $number, string $status = 'Available'): Room

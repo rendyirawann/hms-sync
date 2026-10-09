@@ -1,0 +1,132 @@
+/* ==========================================================================
+   HMS motion: logo flip, hero movement, nav underline, button hover.
+   Shared by the public site, the auth pages and the admin panel.
+   Everything is disabled for visitors who ask for reduced motion.
+   ========================================================================== */
+
+/* --- Logo: periodic 3D flip, faster on hover --- */
+@keyframes hms-logo-flip {
+    0%, 72% { transform: perspective(400px) rotateY(0deg); }
+    86% { transform: perspective(400px) rotateY(180deg); }
+    100% { transform: perspective(400px) rotateY(360deg); }
+}
+.hms-logo {
+    animation: hms-logo-flip 6s ease-in-out infinite;
+    transform-style: preserve-3d;
+    backface-visibility: visible;
+    will-change: transform;
+}
+a:hover > .hms-logo,
+.hms-logo:hover { animation-duration: 1.2s; }
+
+/* --- Hero: slow pan/zoom, staggered entrance, floating badge, shimmering accent --- */
+@keyframes hms-kenburns {
+    0% { transform: scale(1.05) translate3d(0, 0, 0); }
+    100% { transform: scale(1.16) translate3d(-2.5%, -1.5%, 0); }
+}
+.hms-hero-pan { animation: hms-kenburns 22s ease-in-out infinite alternate; will-change: transform; }
+
+@keyframes hms-fade-up {
+    from { opacity: 0; transform: translate3d(0, 24px, 0); }
+    to { opacity: 1; transform: none; }
+}
+.hms-rise { animation: hms-fade-up .8s cubic-bezier(.2, .7, .2, 1) both; }
+.hms-rise-1 { animation-delay: .1s; }
+.hms-rise-2 { animation-delay: .25s; }
+.hms-rise-3 { animation-delay: .4s; }
+.hms-rise-4 { animation-delay: .55s; }
+
+@keyframes hms-float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -8px, 0); }
+}
+.hms-float { animation: hms-float 4s ease-in-out infinite; }
+
+@keyframes hms-shimmer {
+    from { background-position: 0% 50%; }
+    to { background-position: 200% 50%; }
+}
+.hms-shimmer {
+    background-size: 200% auto !important;
+    animation: hms-shimmer 4s linear infinite;
+}
+
+/* --- Navbar links: gradient underline that grows from the left --- */
+.hms-nav-link { position: relative; transition: color .2s ease; }
+.hms-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform .3s ease;
+}
+.hms-nav-link:hover::after,
+.hms-nav-link:focus-visible::after { transform: scaleX(1); transform-origin: left; }
+
+/* --- Buttons: lift + light sweep --- */
+.hms-btn {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, filter .2s ease;
+}
+.hms-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, .35) 50%, transparent 80%);
+    transform: translateX(-120%);
+    transition: transform .6s ease;
+    pointer-events: none;
+}
+.hms-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -10px rgba(37, 99, 235, .45); filter: saturate(1.08); }
+.hms-btn:hover::before { transform: translateX(120%); }
+.hms-btn:active { transform: translateY(0) scale(.98); }
+
+/* Cards that act as links */
+.hms-card { transition: transform .25s ease, box-shadow .25s ease; }
+.hms-card:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -20px rgba(15, 23, 42, .35); }
+
+@media (prefers-reduced-motion: reduce) {
+    .hms-logo, .hms-hero-pan, .hms-rise, .hms-float, .hms-shimmer { animation: none !important; }
+    .hms-btn, .hms-btn::before, .hms-card, .hms-nav-link::after { transition: none !important; }
+    .hms-btn:hover, .hms-card:hover { transform: none; }
+}
+
+/* --- Admin panel (Metronic): every button lifts slightly on hover --- */
+#kt_body .btn { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease; }
+#kt_body .btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 20px -12px rgba(15, 23, 42, .45); }
+#kt_body .btn:not(:disabled):active { transform: translateY(0) scale(.98); }
+#kt_body .menu-link { transition: background-color .2s ease, color .2s ease, transform .2s ease; }
+#kt_body .menu-item > .menu-link:hover { transform: translateX(2px); }
+
+@media (prefers-reduced-motion: reduce) {
+    #kt_body .btn, #kt_body .menu-link { transition: none !important; }
+    #kt_body .btn:hover, #kt_body .menu-item > .menu-link:hover { transform: none; }
+}
+
+/* --- Custom cursors (brand gradient). Each falls back to the system cursor. --- */
+html, body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M4 3l18 9.5-7.6 2.1L11 22z' fill='url(%23g)' stroke='white' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 4 3, auto;
+}
+
+a, button, summary, select, label[for], [role="button"], [role="tab"],
+input[type="submit"], input[type="button"], input[type="checkbox"], input[type="radio"], input[type="file"],
+.hms-btn, .hms-card, .btn, .menu-link, .menu-item[data-kt-menu-trigger] > .menu-link,
+[data-hms-show], [data-hms-drawer], [data-bs-toggle], [data-bs-dismiss], .page-link, .badge[role="button"] {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%234f46e5'/%3E%3Cstop offset='1' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M10 3.5a2 2 0 0 1 2 2V12l1-.1a1.9 1.9 0 0 1 2 1.3 1.9 1.9 0 0 1 2.4.9 1.9 1.9 0 0 1 2.6 1.6V19c0 3.6-2.6 6-6 6h-1.6c-2 0-3.6-1-4.7-2.6L4.6 18a1.9 1.9 0 0 1 2.9-2.4L8 16V5.5a2 2 0 0 1 2-2z' fill='url(%23g)' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 10 3, pointer;
+}
+
+input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="date"]),
+textarea, [contenteditable="true"] {
+    cursor: text;
+}
+
+:disabled, [aria-disabled="true"] { cursor: not-allowed !important; }

@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Room extends Model
 {
+    use BelongsToHotel;
+
     public const STATUSES = ['Available', 'Occupied', 'Maintenance', 'Cleaning'];
 
     protected $fillable = [
-        'room_type_id', 'room_number', 'floor', 'status', 'lock_id',
+        'hotel_id', 'room_type_id', 'room_number', 'floor', 'status', 'lock_id',
     ];
 
     protected $hidden = ['lock_code_ref'];
@@ -18,7 +21,7 @@ class Room extends Model
     {
         static::updated(function (Room $room) {
             if ($room->wasChanged('status')) {
-                \App\Events\Hms\RoomBoardUpdated::dispatch($room->id, $room->room_number, $room->status, 'status ' . $room->status);
+                \App\Events\Hms\RoomBoardUpdated::dispatch((int) $room->hotel_id, $room->id, $room->room_number, $room->status, 'status ' . $room->status);
             }
         });
     }
@@ -46,5 +49,11 @@ class Room extends Model
     public function activeReservation()
     {
         return $this->hasOne(Reservation::class)->where('status', 'Active');
+    }
+
+    /** hotel_id follows the parent roomtype. */
+    protected function resolveHotelId(): ?int
+    {
+        return $this->room_type_id ? RoomType::withoutGlobalScopes()->whereKey($this->room_type_id)->value('hotel_id') : null;
     }
 }

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class HotelImage extends Model
 {
-    protected $fillable = ['path', 'caption', 'sort'];
+    use BelongsToHotel;
+
+    protected $fillable = ['hotel_id', 'path', 'caption', 'sort'];
 
     public function getUrlAttribute(): string
     {

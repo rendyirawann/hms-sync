@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Shift extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
-        'name', 'start_time', 'end_time',
+        'hotel_id', 'name', 'start_time', 'end_time',
     ];
 
     public function employeeShifts()

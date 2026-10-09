@@ -32,8 +32,8 @@ class BookingNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $booking = $this->booking->fresh(['roomType', 'reservation.room']) ?? $this->booking;
-        $hotel = Hotel::current();
+        $booking = $this->booking->fresh(['roomType', 'reservation.room', 'hotel']) ?? $this->booking;
+        $hotel = $booking->hotel;
         $rp = fn ($v) => 'Rp ' . number_format((float) $v, 0, ',', '.');
 
         $mail = (new MailMessage)

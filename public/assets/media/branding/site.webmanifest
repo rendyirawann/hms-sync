@@ -1,19 +1,11 @@
 {
-    "name": "StarterTemp",
-    "short_name": "StarterTemp",
+    "name": "HMS Sync",
+    "short_name": "HMS",
     "icons": [
-        {
-            "src": "/assets/media/branding/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/assets/media/branding/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
+        { "src": "/assets/media/branding/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/assets/media/branding/icon-512.png", "sizes": "512x512", "type": "image/png" }
     ],
-    "theme_color": "#3adfab",
+    "theme_color": "#4f46e5",
     "background_color": "#ffffff",
     "display": "standalone"
 }

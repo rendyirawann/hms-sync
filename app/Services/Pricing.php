@@ -25,7 +25,7 @@ class Pricing
      */
     public function quote(RoomType $type, CarbonInterface $checkIn, CarbonInterface $checkOut, ?PromoCode $promo = null): array
     {
-        $hotel = Hotel::current();
+        $hotel = $type->hotel;
         $nights = [];
 
         foreach (CarbonPeriod::create($checkIn, $checkOut->copy()->subDay()) as $night) {
@@ -54,7 +54,7 @@ class Pricing
     {
         $base = (float) $type->base_price;
 
-        $rule = $this->rules()->first(fn (RateRule $rule) => $rule->appliesTo($type->id, $night));
+        $rule = $this->rules()->first(fn (RateRule $rule) => (int) $rule->hotel_id === (int) $type->hotel_id && $rule->appliesTo($type->id, $night));
 
         return round($rule ? $rule->apply($base) : $base, 2);
     }

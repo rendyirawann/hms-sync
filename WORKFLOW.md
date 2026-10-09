@@ -1,6 +1,6 @@
 # Alur Kerja dan Workflow HMS (Hotel Management System)
 
-Dokumen ini merangkum alur kerja, spesifikasi sistem, dan daftar tugas (roadmap) untuk pengembangan proyek HMS berdasarkan permintaan dan diskusi kita. Sistem ini dirancang khusus untuk operasional satu hotel (bukan SAAS).
+Dokumen ini merangkum alur kerja, spesifikasi sistem, dan daftar tugas (roadmap) untuk pengembangan proyek HMS berdasarkan permintaan dan diskusi kita. Sistem ini adalah **marketplace hotel** (banyak hotel mitra, seperti Traveloka): tamu memesan di hotel mana pun, setiap hotel mengelola operasionalnya sendiri dengan data terisolasi, dan platform menerima pembayaran online lalu menyetorkannya ke hotel setelah dipotong komisi.
 
 ## 1. Arsitektur Pengguna (Role & Permissions)
 Sistem memiliki beberapa tingkatan akses pengguna:
@@ -60,6 +60,7 @@ Untuk menjaga konsistensi dan pengalaman pengguna yang modern di area dashboard 
 - [x] Driver smart lock TTLock (kode diprogram saat check-in, dihapus saat check-out/pindah kamar).
 - [x] Realtime via Reverb: front desk, housekeeping, dan halaman reservasi tamu.
 - [x] Redis (cache/session/queue) + Laravel Octane (RoadRunner), image Docker & docker compose.
+- [x] Marketplace multi-hotel: isolasi data per hotel, pendaftaran mitra + persetujuan, pencarian lintas hotel, halaman per hotel, komisi & setoran (settlement), verifikasi transfer oleh platform.
 
 ## 6. Hak Akses HMS
 | Permission | Superadmin | admin | Pegawai | Customer |

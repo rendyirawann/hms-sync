@@ -4,14 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', $hotel->name . ' - Reservasi Kamar')</title>
+    <title>{{ $brand['name'] }} - Pesan Hotel di Seluruh Indonesia</title>
     
-    <link rel="shortcut icon" href="{{ asset('assets/media/logos/favicon.ico') }}" />
+    <link rel="icon" href="{{ $brand['favicon_url'] }}" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $brand['favicon_png_url'] }}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $brand['apple_icon_url'] }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite('resources/css/app.css')
+    <link rel="stylesheet" href="{{ asset('assets/css/hms-motion.css') }}">
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -28,131 +31,132 @@
 
     @include('frontend.partials.header')
 
-    <!-- Hero Section -->
-    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+    <!-- Hero -->
+    <section class="relative pt-32 pb-20 lg:pt-44 lg:pb-32 overflow-hidden">
         <div class="absolute inset-0 z-0">
-            <img fetchpriority="high" decoding="async" src="{{ $hotel->image_url ?? asset('assets/media/landing/hero-landing.png') }}" alt="{{ $hotel->name }}" class="w-full h-full object-cover object-center scale-105">
-            <div class="absolute inset-0 bg-gradient-to-r from-white/40 via-transparent to-transparent"></div>
+            <img src="{{ asset('assets/media/landing/hero-landing.png') }}" alt="" fetchpriority="high" decoding="async" class="w-full h-full object-cover object-center hms-hero-pan">
+            <div class="absolute inset-0 bg-gradient-to-r from-white/60 via-white/10 to-transparent"></div>
         </div>
-
         <div class="container mx-auto px-4 lg:px-8 relative z-10">
             <div class="max-w-2xl">
-                <div class="inline-flex items-center gap-3 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm mb-8 border border-slate-100">
-                    <div class="w-8 h-8 rounded-full bg-[#001e3c] flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />
-                        </svg>
-                    </div>
-                    <div class="text-sm">
-                        <span class="font-extrabold text-[#001e3c]">{{ $hotel->name }}</span>
-                        @if ($hotel->rating > 0)
-                            <span class="text-blue-600 font-bold ml-2">&#9733; {{ $hotel->rating }}</span>
-                        @endif
-                    </div>
-                </div>
-
-                <h1 class="text-6xl lg:text-[5.5rem] font-extrabold text-slate-900 leading-[1.05] mb-8">
-                    Menginap Melampaui<br>Imajinasi <span class="text-gradient">Anda</span>
+                <div class="hms-rise hms-rise-1 inline-flex items-center gap-3 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm mb-8 border border-slate-100"><span class="hms-float inline-flex items-center gap-3">
+                    <span class="font-extrabold text-[#001e3c] text-sm">{{ \App\Models\Hotel::listed()->count() }} hotel mitra</span>
+                    @if ($cities->isNotEmpty())
+                        <span class="text-blue-600 font-bold text-sm">di {{ $cities->count() }} kota</span>
+                    @endif
+                </span></div>
+                <h1 class="hms-rise hms-rise-2 text-5xl lg:text-[5rem] font-extrabold text-slate-900 leading-[1.05] mb-8">
+                    Temukan hotel<br>untuk perjalanan <span class="text-gradient hms-shimmer">Anda</span>
                 </h1>
-                <p class="text-xl text-slate-600 font-medium max-w-md leading-relaxed">
-                    {{ $hotel->description ? \Illuminate\Support\Str::limit($hotel->description, 140) : 'Pesan kamar langsung di ' . $hotel->name . ' dengan harga terbaik.' }}
+                <p class="hms-rise hms-rise-3 text-xl text-slate-700 font-medium max-w-md leading-relaxed">
+                    Bandingkan harga dan ketersediaan langsung dari hotel, bayar online, dan terima kode pintu kamar di ponsel saat check-in.
                 </p>
             </div>
         </div>
     </section>
 
-    <!-- Search Section -->
-    <!-- Search Section -->
+    <!-- Search -->
     <section id="cari" class="container mx-auto px-4 lg:px-8 -mt-24 relative z-20">
-        <div class="bg-white rounded-3xl shadow-2xl shadow-slate-200/50 p-2 border border-slate-100 max-w-6xl">
+        <div class="hms-rise hms-rise-4 bg-white rounded-3xl shadow-2xl shadow-slate-200/50 p-2 border border-slate-100 max-w-6xl">
             @include('frontend.partials.search-form')
+            <datalist id="hms-cities">
+                @foreach ($cities as $city)
+                    <option value="{{ $city->city }}"></option>
+                @endforeach
+            </datalist>
         </div>
+        @if ($cities->isNotEmpty())
+            <div class="flex flex-wrap items-center gap-2 mt-6 max-w-6xl">
+                <span class="text-xs font-extrabold text-slate-400 uppercase tracking-wider mr-2">Kota populer</span>
+                @foreach ($cities as $city)
+                    <a href="{{ route('rooms.search', ['q' => $city->city, 'check_in' => today()->toDateString(), 'check_out' => today()->addDay()->toDateString(), 'guests' => 2]) }}"
+                        class="hms-btn px-4 py-2 rounded-full bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:border-blue-400 hover:text-blue-600">
+                        {{ $city->city }} <span class="text-slate-400 font-semibold">· {{ $city->total }}</span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </section>
 
-    <!-- Room Types -->
-    <section id="kamar" class="py-20 bg-slate-50/50">
+    <!-- Hotels -->
+    <section id="hotel" class="py-20">
         <div class="container mx-auto px-4 lg:px-8">
             <div class="flex items-end justify-between mb-12 gap-6">
                 <div>
-                    <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Pilihan kamar</p>
-                    <h2 class="text-2xl font-extrabold text-slate-800">Kamar di {{ $hotel->name }}</h2>
+                    <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Hotel pilihan</p>
+                    <h2 class="text-2xl font-extrabold text-slate-800">Menginap di hotel mitra kami</h2>
                 </div>
                 <a href="#cari" class="text-blue-600 font-bold text-sm hover:underline">Cek ketersediaan</a>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                @forelse ($roomTypes as $type)
-                    <div class="bg-white rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/40 border border-slate-50 relative group flex flex-col">
-                        <div class="h-56 overflow-hidden">
-                            <img loading="lazy" decoding="async" src="{{ $type->image_url }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="{{ $type->name }}">
+                @forelse ($hotels as $hotel)
+                    <a href="{{ route('hotels.show', $hotel) }}" class="hms-card bg-white rounded-[2rem] overflow-hidden shadow-xl shadow-slate-200/40 border border-slate-50 group flex flex-col">
+                        <div class="h-52 overflow-hidden">
+                            <img loading="lazy" decoding="async" src="{{ $hotel->cover_url }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt="{{ $hotel->name }}">
                         </div>
                         <div class="p-6 flex flex-col flex-1">
-                            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Maks. {{ $type->capacity }} tamu</p>
-                            <h4 class="text-lg font-extrabold text-slate-800 mb-2 truncate"><a href="{{ route('rooms.show', $type) }}" class="hover:text-blue-600">{{ $type->name }}</a></h4>
-                            @if ($type->reviews_avg_rating)
-                                <p class="text-xs font-bold text-yellow-500 mb-2">&#9733; {{ number_format($type->reviews_avg_rating, 1) }}</p>
-                            @endif
-                            <p class="text-xs text-slate-500 mb-4">{{ implode(' · ', array_slice($type->amenities ?? [], 0, 4)) }}</p>
-                            <div class="mt-auto flex items-end justify-between">
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400">Mulai dari</p>
-                                    <p class="text-lg font-black text-orange-500">Rp {{ number_format($fromPrice[$type->id] ?? $type->base_price, 0, ',', '.') }}<span class="text-xs text-slate-400 font-bold">/malam</span></p>
-                                </div>
-                                <a href="{{ route('rooms.show', $type) }}" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-blue-700">Lihat</a>
+                            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">{{ $hotel->city ?: '-' }}</p>
+                            <h3 class="text-lg font-extrabold text-slate-800 mb-2 truncate group-hover:text-blue-600">{{ $hotel->name }}</h3>
+                            <p class="text-xs font-bold text-slate-500 mb-4">
+                                @if ($hotel->reviews_avg_rating)
+                                    <span class="text-yellow-500">&#9733; {{ number_format($hotel->reviews_avg_rating, 1) }}</span> ({{ $hotel->reviews_count }} ulasan)
+                                @else
+                                    Belum ada ulasan
+                                @endif
+                            </p>
+                            <div class="mt-auto">
+                                <p class="text-[10px] font-bold text-slate-400">Mulai dari</p>
+                                <p class="text-lg font-black text-orange-500">
+                                    @if ($hotel->room_types_min_base_price)
+                                        Rp {{ number_format($hotel->room_types_min_base_price, 0, ',', '.') }}<span class="text-xs text-slate-400 font-bold">/malam</span>
+                                    @else
+                                        <span class="text-sm text-slate-400">Segera hadir</span>
+                                    @endif
+                                </p>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
-                    <p class="col-span-full text-center text-slate-500 py-10">Tipe kamar belum tersedia. Silakan kembali lagi nanti.</p>
+                    <p class="col-span-full text-center text-slate-500 py-10">Belum ada hotel yang tayang. Pemilik hotel? <a href="{{ route('partner.register') }}" class="text-blue-600 font-bold">Daftarkan hotel Anda</a>.</p>
                 @endforelse
             </div>
         </div>
     </section>
 
-    @if ($gallery->isNotEmpty())
-    <!-- Facilities gallery -->
-    <section id="fasilitas" class="py-20">
-        <div class="container mx-auto px-4 lg:px-8">
-            <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Fasilitas</p>
-            <h2 class="text-2xl font-extrabold text-slate-800 mb-10">Suasana {{ $hotel->name }}</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach ($gallery as $image)
-                    <figure class="relative overflow-hidden rounded-2xl {{ $loop->first ? 'md:col-span-2 md:row-span-2' : '' }}">
-                        <img src="{{ $image->url }}" alt="{{ $image->caption }}" loading="lazy" decoding="async" class="w-full h-full min-h-40 object-cover">
-                        @if ($image->caption)
-                            <figcaption class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-3 text-xs font-bold text-white">{{ $image->caption }}</figcaption>
-                        @endif
-                    </figure>
-                @endforeach
-            </div>
-        </div>
-    </section>
-    @endif
-
     @if ($reviews->isNotEmpty())
     <!-- Reviews -->
     <section id="ulasan" class="py-20 bg-slate-50/50">
         <div class="container mx-auto px-4 lg:px-8">
-            <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
-                <div>
-                    <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Kata tamu kami</p>
-                    <h2 class="text-2xl font-extrabold text-slate-800">Ulasan tamu</h2>
-                </div>
-                <p class="text-sm font-bold text-slate-600"><span class="text-3xl font-black text-yellow-500">{{ number_format((float) $rating->average, 1) }}</span> / 5 dari {{ $rating->total }} ulasan</p>
-            </div>
+            <p class="text-xs font-extrabold text-blue-600 uppercase tracking-widest mb-2">Kata tamu</p>
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-10">Ulasan terbaru</h2>
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach ($reviews as $review)
                     <div class="bg-white rounded-3xl border border-slate-100 p-6 shadow-lg shadow-slate-200/30">
                         <p class="text-yellow-400 mb-3">{{ str_repeat('★', $review->rating) }}<span class="text-slate-200">{{ str_repeat('★', 5 - $review->rating) }}</span></p>
                         <p class="text-sm text-slate-600 mb-4">{{ \Illuminate\Support\Str::limit($review->comment ?: 'Menginap yang menyenangkan.', 220) }}</p>
                         <p class="text-xs font-bold text-slate-800">{{ \Illuminate\Support\Str::words($review->user->name ?? 'Tamu', 2, '') }}</p>
-                        <p class="text-[11px] text-slate-400">{{ $review->roomType->name ?? '' }} &middot; {{ $review->created_at->translatedFormat('F Y') }}</p>
+                        <a href="{{ route('hotels.show', $review->hotel) }}" class="text-[11px] font-bold text-blue-600">{{ $review->hotel->name }}</a>
                     </div>
                 @endforeach
             </div>
         </div>
     </section>
     @endif
+
+    <!-- Partner CTA -->
+    <section class="py-16">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="rounded-[2rem] bg-[#001e3c] text-white p-10 lg:p-14 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                <div class="max-w-xl">
+                    <p class="text-xs font-extrabold text-blue-300 uppercase tracking-widest mb-3">Untuk pemilik hotel</p>
+                    <h2 class="text-3xl font-extrabold mb-3">Jual kamar Anda di {{ $brand['name'] }}</h2>
+                    <p class="text-slate-300">Panel front desk, housekeeping, shift pegawai, dan laporan sudah termasuk. Pembayaran tamu kami terima dan setorkan rutin ke rekening hotel Anda.</p>
+                </div>
+                <a href="{{ route('partner.register') }}" class="hms-btn bg-white text-[#001e3c] px-8 py-4 rounded-2xl font-extrabold whitespace-nowrap">Daftarkan hotel</a>
+            </div>
+        </div>
+    </section>
 
     <!-- Value Propositions -->
     <section class="py-20 border-t border-slate-50">
@@ -205,7 +209,6 @@
             </div>
         </div>
     </section>
-
 
     @include('frontend.partials.footer')
 </body>

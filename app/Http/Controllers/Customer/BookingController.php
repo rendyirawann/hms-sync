@@ -30,21 +30,23 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $bookings = $request->user()->bookings()
-            ->with(['roomType:id,name,image', 'reservation.room:id,room_number', 'review:id,booking_id'])
+            ->with(['hotel:id,name,slug,city', 'roomType:id,name,image', 'reservation.room:id,room_number', 'review:id,booking_id'])
             ->latest()
             ->paginate(10);
 
-        return view('frontend.customer.bookings', ['bookings' => $bookings, 'hotel' => Hotel::current()]);
+        return view('frontend.customer.bookings', ['bookings' => $bookings]);
     }
 
     public function show(Request $request, Booking $booking, Tripay $tripay)
     {
         $this->authorizeOwner($request, $booking);
-        $booking->load(['roomType', 'reservation.room', 'payments', 'charges', 'review', 'promoCode']);
+        $booking->load(['hotel', 'roomType', 'reservation.room', 'payments', 'charges', 'review', 'promoCode']);
 
         return view('frontend.customer.show', [
             'booking' => $booking,
-            'hotel' => Hotel::current(),
+            'hotel' => $booking->hotel,
+            // Guests pay the platform; the hotel is settled afterwards.
+            'bankAccounts' => \App\Models\Setting::get('platform_bank_accounts', ''),
             'channels' => $booking->status === 'Pending' ? $tripay->channels() : [],
             'tripayEnabled' => $tripay->enabled(),
         ]);
@@ -52,7 +54,7 @@ class BookingController extends Controller
 
     public function create(Request $request, RoomType $roomType)
     {
-        abort_unless($roomType->is_active, 404);
+        abort_unless($roomType->is_active && $roomType->hotel?->isBookable(), 404);
 
         $data = $request->validate([
             'check_in' => ['required', 'date', 'after_or_equal:today'],
@@ -67,13 +69,13 @@ class BookingController extends Controller
         $promo = null;
         $promoError = null;
         try {
-            $promo = $this->bookings->resolvePromo($data['promo_code'] ?? null, $checkIn, $checkOut);
+            $promo = $this->bookings->resolvePromo($data['promo_code'] ?? null, $checkIn, $checkOut, $roomType->hotel_id);
         } catch (ValidationException $e) {
             $promoError = $e->errors()['promo_code'][0] ?? null;
         }
 
         return view('frontend.customer.create', [
-            'hotel' => Hotel::current(),
+            'hotel' => $roomType->hotel,
             'roomType' => $roomType->load('images'),
             'checkIn' => $checkIn,
             'checkOut' => $checkOut,

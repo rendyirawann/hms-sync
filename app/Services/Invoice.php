@@ -10,11 +10,11 @@ class Invoice
 {
     public function download(Booking $booking)
     {
-        $booking->load(['user', 'roomType', 'reservation.room', 'charges', 'payments', 'promoCode']);
+        $booking->load(['user', 'roomType', 'reservation.room', 'charges', 'payments', 'promoCode', 'hotel']);
 
         $pdf = Pdf::loadView('pdf.invoice', [
             'booking' => $booking,
-            'hotel' => Hotel::current(),
+            'hotel' => $booking->hotel,
         ])->setPaper('a4');
 
         return $pdf->download('Invoice-' . $booking->booking_code . '.pdf');

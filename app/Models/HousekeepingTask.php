@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class HousekeepingTask extends Model
 {
+    use BelongsToHotel;
+
     public const TYPES = [
         'checkout' => 'Bersih setelah check-out',
         'stayover' => 'Bersih harian',
@@ -15,7 +18,7 @@ class HousekeepingTask extends Model
 
     public const STATUSES = ['pending' => 'Menunggu', 'in_progress' => 'Dikerjakan', 'done' => 'Selesai'];
 
-    protected $fillable = ['room_id', 'assigned_to', 'type', 'status', 'notes', 'started_at', 'finished_at', 'created_by'];
+    protected $fillable = ['hotel_id', 'room_id', 'assigned_to', 'type', 'status', 'notes', 'started_at', 'finished_at', 'created_by'];
 
     protected $casts = [
         'started_at' => 'datetime',
@@ -25,10 +28,10 @@ class HousekeepingTask extends Model
     protected static function booted(): void
     {
         static::saved(function (HousekeepingTask $task) {
-            $room = $task->room()->first(['id', 'room_number', 'status']);
+            $room = $task->room()->withoutGlobalScopes()->first(['id', 'hotel_id', 'room_number', 'status']);
             if ($room) {
                 \App\Events\Hms\RoomBoardUpdated::dispatch(
-                    $room->id, $room->room_number, $room->status,
+                    (int) $room->hotel_id, $room->id, $room->room_number, $room->status,
                     'tugas ' . strtolower(self::STATUSES[$task->status] ?? $task->status)
                 );
             }
@@ -43,5 +46,11 @@ class HousekeepingTask extends Model
     public function assignee()
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    /** hotel_id follows the parent room. */
+    protected function resolveHotelId(): ?int
+    {
+        return $this->room_id ? Room::withoutGlobalScopes()->whereKey($this->room_id)->value('hotel_id') : null;
     }
 }

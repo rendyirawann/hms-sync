@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class EmployeeShift extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
-        'user_id', 'shift_id', 'date', 'status', 'start_at', 'end_at',
+        'hotel_id', 'user_id', 'shift_id', 'date', 'status', 'start_at', 'end_at',
     ];
 
     protected $casts = [
@@ -33,5 +36,11 @@ class EmployeeShift extends Model
             'Finished' => 'success',
             default => 'secondary',
         };
+    }
+
+    /** hotel_id follows the parent shift. */
+    protected function resolveHotelId(): ?int
+    {
+        return $this->shift_id ? Shift::withoutGlobalScopes()->whereKey($this->shift_id)->value('hotel_id') : null;
     }
 }

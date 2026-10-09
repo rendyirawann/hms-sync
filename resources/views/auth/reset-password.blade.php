@@ -5,7 +5,7 @@
 @section('content')
     <div class="auth-card">
         <div class="auth-card__brand">
-            <img src="{{ $brand['logo_url'] }}" alt="" width="56" height="56" />
+            <img src="{{ $brand['logo_url'] }}" alt="" class="hms-logo" width="56" height="56" />
         </div>
 
         <h1 class="auth-card__title">Atur ulang kata sandi</h1>
@@ -61,7 +61,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="auth-submit">Simpan kata sandi baru</button>
+            <button type="submit" class="auth-submit hms-btn">Simpan kata sandi baru</button>
         </form>
 
         <p class="auth-foot">

@@ -26,6 +26,7 @@
 
     <link href="{{ asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/css/hms-motion.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app-auth.css') }}" rel="stylesheet" type="text/css" />
 
     <style>
@@ -56,7 +57,7 @@
         <div class="auth-preloader__mark">
             <span class="auth-preloader__ring" aria-hidden="true"></span>
             <span class="auth-preloader__ring auth-preloader__ring--alt" aria-hidden="true"></span>
-            <img src="{{ $brand['logo_url'] }}" alt="" width="56" height="56" />
+            <img src="{{ $brand['logo_url'] }}" alt="" class="hms-logo" width="56" height="56" />
         </div>
         <div class="auth-preloader__label">{{ $brand['name'] }}</div>
         <div class="auth-preloader__bar" aria-hidden="true"><span></span></div>
@@ -78,7 +79,7 @@
         <!--begin::Story panel-->
         <section class="auth-story">
             <a href="{{ url('/') }}" class="auth-story__brand text-decoration-none">
-                <img src="{{ $brand['logo_url'] }}" alt="" class="auth-story__logo" width="52" height="52" />
+                <img src="{{ $brand['logo_url'] }}" alt="" class="auth-story__logo hms-logo" width="52" height="52" />
                 <span>
                     <span class="auth-story__name d-block">{{ $brand['name'] }}</span>
                     <span class="auth-story__tagline">{{ $brand['tagline'] }}</span>

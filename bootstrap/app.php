@@ -19,7 +19,19 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'forbid-banned-user' => \Cog\Laravel\Ban\Http\Middleware\ForbidBannedUser::class,
+            'hotel' => \App\Http\Middleware\ResolveHotelContext::class,
         ]);
+
+        // Signed-in users who open a guest page (login, register) go to their own home:
+        // guests to "Reservasi Saya", staff to the dashboard.
+        $middleware->redirectUsersTo(fn ($request) => $request->user()?->homeUrl() ?? '/');
+
+        // Tenant isolation: the hotel context must be set BEFORE route-model
+        // binding, otherwise {booking} / {room} would resolve another hotel's row.
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            prepend: \App\Http\Middleware\ResolveHotelContext::class,
+        );
 
         // Runs on every request, including assets served through PHP:
         // header hardening first, then the URL-signature guard.

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend\Hms;
 
 use App\Http\Controllers\Backend\Hms\Concerns\RespondsWithAlert;
 use App\Http\Controllers\Controller;
+use App\Models\Hotel;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,6 +20,7 @@ class StaffController extends Controller
     public function index(Request $request)
     {
         $staff = User::role(self::ROLES)
+            ->where('hotel_id', Hotel::current()->id)
             ->with('roles')
             ->when($request->filled('q'), function ($q) use ($request) {
                 $term = '%' . $request->q . '%';
@@ -45,6 +47,7 @@ class StaffController extends Controller
             'phone' => $data['phone'] ?? null,
             'password' => $data['password'],
             'is_active' => $request->boolean('is_active'),
+            'hotel_id' => Hotel::current()->id,
         ]);
         // Created by the hotel, so the address is trusted - no activation mail.
         $user->forceFill(['email_verified_at' => now()])->save();
@@ -87,16 +90,16 @@ class StaffController extends Controller
         return $this->done($request, 'Pegawai berhasil dihapus.');
     }
 
-    /** Only a Superadmin may create or promote another admin. */
+    /** Hotel admins (owners) manage both admins and staff of their own hotel. */
     private function assignableRoles(): array
     {
-        return auth()->user()->hasRole('Superadmin') ? self::ROLES : ['Pegawai'];
+        return auth()->user()->hasAnyRole(['Superadmin', 'admin']) ? self::ROLES : ['Pegawai'];
     }
 
+    /** Only staff of the hotel being managed can be edited from here. */
     private function ensureStaff(User $user): void
     {
-        abort_unless($user->hasAnyRole(self::ROLES), 404);
-        abort_if($user->hasRole('admin') && ! auth()->user()->hasRole('Superadmin'), 403);
+        abort_unless($user->hasAnyRole(self::ROLES) && (int) $user->hotel_id === (int) Hotel::current()->id, 404);
     }
 
     private function validated(Request $request, ?User $user = null): array

@@ -1,5 +1,5 @@
 @extends('frontend.layout')
-@section('title', 'Reservasi Saya - ' . $hotel->name)
+@section('title', 'Reservasi Saya - ' . $brand['name'])
 
 @php
     $statusStyle = [
@@ -16,7 +16,7 @@
 @section('content')
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <h1 class="text-2xl font-extrabold text-slate-800">Reservasi Saya</h1>
-        <a href="{{ route('landing') }}#cari" class="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700">+ Reservasi baru</a>
+        <a href="{{ route('landing') }}#cari" class="hms-btn bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black hover:bg-blue-700">+ Reservasi baru</a>
     </div>
 
     <div class="flex flex-col gap-5">
@@ -31,7 +31,7 @@
                             {{ $res?->status === 'Active' ? 'Sedang menginap' : $booking->status_label }}
                         </span>
                     </div>
-                    <p class="text-xs font-bold text-slate-400 mb-3">Kode: {{ $booking->booking_code }}</p>
+                    <p class="text-xs font-bold text-slate-400 mb-3">{{ $booking->hotel?->name }} &middot; {{ $booking->hotel?->city }} &middot; Kode: {{ $booking->booking_code }}</p>
                     <p class="text-sm text-slate-600">
                         {{ $booking->check_in_date->translatedFormat('d M Y') }} &ndash; {{ $booking->check_out_date->translatedFormat('d M Y') }}
                         &middot; {{ $booking->nights }} malam &middot; {{ $booking->guests }} tamu
@@ -58,7 +58,7 @@
         @empty
             <div class="bg-white rounded-3xl border border-slate-100 p-16 text-center">
                 <p class="text-slate-500 mb-6">Anda belum punya reservasi.</p>
-                <a href="{{ route('landing') }}#cari" class="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black">Cari kamar</a>
+                <a href="{{ route('landing') }}#cari" class="hms-btn bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-black">Cari kamar</a>
             </div>
         @endforelse
     </div>

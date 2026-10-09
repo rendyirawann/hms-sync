@@ -20,6 +20,7 @@
     <!--begin::Global Stylesheets Bundle-->
     <link href="{{ asset('assets/plugins/global/plugins.bundle.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/style.bundle.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/css/hms-motion.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app-shell.css') }}" rel="stylesheet" type="text/css" />
     <!--end::Global Stylesheets Bundle-->
 
@@ -130,10 +131,11 @@
 </head>
 
 @php
-    $hmsChannels = array_keys(array_filter([
-        'frontdesk' => auth()->user()?->can('hms.booking'),
-        'housekeeping' => auth()->user()?->can('hms.housekeeping') || auth()->user()?->can('hms.booking'),
-    ]));
+    $ctxHotel = \App\Models\Hotel::current();
+    $hmsChannels = $ctxHotel ? array_values(array_filter([
+        auth()->user()?->can('hms.booking') ? 'hms.hotel.' . $ctxHotel->id . '.frontdesk' : null,
+        auth()->user()?->can('hms.housekeeping') || auth()->user()?->can('hms.booking') ? 'hms.hotel.' . $ctxHotel->id . '.housekeeping' : null,
+    ])) : [];
 @endphp
 <body id="kt_body" class="app-blank" data-hms-channels="{{ implode(',', $hmsChannels) }}">
 
@@ -162,7 +164,7 @@
                         </button>
 
                         <a href="{{ route('dashboard') }}" class="app-brand">
-                            <img src="{{ $brand['logo_url'] }}" alt="" class="app-brand__mark" width="34" height="34" />
+                            <img src="{{ $brand['logo_url'] }}" alt="" class="app-brand__mark hms-logo" width="34" height="34" />
                             <span class="min-w-0">
                                 <span class="app-brand__name d-block">{{ $brand['name'] }}</span>
                                 <span class="app-brand__tagline">{{ $brand['tagline'] }}</span>
@@ -188,6 +190,7 @@
         <!--begin::Content-->
         <main class="app-content" id="kt_content">
             <div class="container-fluid">
+                @include('backend.layout.hotel-context')
                 @yield('content')
             </div>
         </main>

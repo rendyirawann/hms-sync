@@ -44,11 +44,17 @@ class BookingService
      */
     public function create(RoomType $type, array $data, ?string $userId, string $source = 'online', ?string $createdBy = null): Booking
     {
+        $hotel = $type->hotel;
+
+        if (! $hotel || ! $hotel->isBookable()) {
+            throw ValidationException::withMessages(['check_in' => 'Hotel ini sedang tidak menerima reservasi.']);
+        }
+
         $checkIn = Carbon::parse($data['check_in'])->startOfDay();
         $checkOut = Carbon::parse($data['check_out'])->startOfDay();
-        $promo = $this->resolvePromo($data['promo_code'] ?? null, $checkIn, $checkOut);
+        $promo = $this->resolvePromo($data['promo_code'] ?? null, $checkIn, $checkOut, $hotel->id);
 
-        $booking = DB::transaction(function () use ($type, $data, $userId, $source, $createdBy, $checkIn, $checkOut, $promo) {
+        $booking = DB::transaction(function () use ($type, $hotel, $data, $userId, $source, $createdBy, $checkIn, $checkOut, $promo) {
             // Serialise bookings of the same room type so two guests cannot
             // both take the last room.
             RoomType::whereKey($type->id)->lockForUpdate()->first();
@@ -59,7 +65,7 @@ class BookingService
 
             if ($promo) {
                 // Re-check the quota under lock.
-                $promo = PromoCode::whereKey($promo->id)->lockForUpdate()->first();
+                $promo = PromoCode::withoutGlobalScopes()->whereKey($promo->id)->lockForUpdate()->first();
                 if ($reason = $promo->rejectionReason($checkIn->diffInDays($checkOut), $checkIn)) {
                     throw ValidationException::withMessages(['promo_code' => $reason]);
                 }
@@ -67,9 +73,11 @@ class BookingService
             }
 
             $quote = $this->pricing->quote($type, $checkIn, $checkOut, $promo);
-            $deadline = Hotel::current()->payment_deadline_hours;
+            $deadline = $hotel->payment_deadline_hours;
 
             return Booking::create([
+                'hotel_id' => $hotel->id,
+                'commission_percent' => $hotel->commission_percent,
                 'user_id' => $userId,
                 'room_type_id' => $type->id,
                 'check_in_date' => $checkIn->toDateString(),
@@ -99,13 +107,18 @@ class BookingService
         return $booking;
     }
 
-    public function resolvePromo(?string $code, Carbon $checkIn, Carbon $checkOut): ?PromoCode
+    /** A code is valid for this hotel's own promos or platform-wide ones (hotel_id null). */
+    public function resolvePromo(?string $code, Carbon $checkIn, Carbon $checkOut, ?int $hotelId = null): ?PromoCode
     {
         if (blank($code)) {
             return null;
         }
 
-        $promo = PromoCode::where('code', strtoupper(trim($code)))->first();
+        $promo = PromoCode::withoutGlobalScopes()
+            ->where('code', strtoupper(trim($code)))
+            ->where(fn ($q) => $q->whereNull('hotel_id')->when($hotelId, fn ($q) => $q->orWhere('hotel_id', $hotelId)))
+            ->orderByRaw('hotel_id is null')   // a hotel's own code wins over a platform code with the same name
+            ->first();
 
         if (! $promo) {
             throw ValidationException::withMessages(['promo_code' => 'Kode promo tidak ditemukan.']);
@@ -146,7 +159,7 @@ class BookingService
             $booking->payments()->where('status', 'pending')->update(['status' => 'expired']);
 
             if ($booking->promo_code_id && $status !== 'NoShow') {
-                PromoCode::whereKey($booking->promo_code_id)->where('used_count', '>', 0)->decrement('used_count');
+                PromoCode::withoutGlobalScopes()->whereKey($booking->promo_code_id)->where('used_count', '>', 0)->decrement('used_count');
             }
         });
 
@@ -177,7 +190,7 @@ class BookingService
             return $reservation;
         });
 
-        $this->lock(fn () => $this->doorLock->grant($reservation->room, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
+        $this->lock(fn () => $this->doorLock->grant($reservation->room, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) $booking->hotel->check_out_time)));
         $this->notify($booking, 'checked_in');
 
         return $reservation;
@@ -209,7 +222,7 @@ class BookingService
     {
         $code = $this->newPasscode();
         $reservation->update(['door_passcode' => $code]);
-        $this->lock(fn () => $this->doorLock->grant($reservation->room, $code, now(), $reservation->booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
+        $this->lock(fn () => $this->doorLock->grant($reservation->room, $code, now(), $reservation->booking->check_out_date->copy()->setTimeFromTimeString((string) $booking->hotel->check_out_time)));
 
         return $code;
     }
@@ -286,7 +299,7 @@ class BookingService
 
         $this->lock(fn () => $this->doorLock->revoke($fromRoom));
         $this->announce($booking, 'moved');
-        $this->lock(fn () => $this->doorLock->grant($to, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) Hotel::current()->check_out_time)));
+        $this->lock(fn () => $this->doorLock->grant($to, $reservation->door_passcode, now(), $booking->check_out_date->copy()->setTimeFromTimeString((string) $reservation->booking->hotel->check_out_time)));
 
         return $to;
     }

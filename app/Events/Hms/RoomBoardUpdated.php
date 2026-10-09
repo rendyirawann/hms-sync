@@ -14,13 +14,13 @@ class RoomBoardUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets;
 
-    public function __construct(public int $roomId, public string $roomNumber, public string $status, public string $reason)
+    public function __construct(public int $hotelId, public int $roomId, public string $roomNumber, public string $status, public string $reason)
     {
     }
 
     public static function forRoom(Room $room, string $reason): self
     {
-        return new self($room->id, $room->room_number, $room->status, $reason);
+        return new self((int) $room->hotel_id, $room->id, $room->room_number, $room->status, $reason);
     }
 
     public function broadcastAs(): string
@@ -30,7 +30,7 @@ class RoomBoardUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('hms.housekeeping')];
+        return [new PrivateChannel('hms.hotel.' . $this->hotelId . '.housekeeping')];
     }
 
     public function broadcastWith(): array

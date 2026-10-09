@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
 class PromoCode extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
-        'code', 'type', 'value', 'max_discount', 'min_nights', 'valid_from', 'valid_until', 'max_uses', 'used_count', 'is_active',
+        'hotel_id', 'code', 'type', 'value', 'max_discount', 'min_nights', 'valid_from', 'valid_until', 'max_uses', 'used_count', 'is_active',
     ];
 
     protected $casts = [

@@ -9,6 +9,7 @@ use App\Models\Shift;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +23,7 @@ class RosterController extends Controller
         $start = Carbon::parse($request->input('week', today()->toDateString()))->startOfWeek();
         $days = CarbonPeriod::create($start, $start->copy()->addDays(6));
 
-        $staff = User::role(StaffController::ROLES)->where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $staff = User::role(StaffController::ROLES)->where('hotel_id', Hotel::current()->id)->where('is_active', true)->orderBy('name')->get(['id', 'name']);
         $shifts = Shift::orderBy('start_time')->get();
 
         $entries = EmployeeShift::with('shift')
@@ -37,8 +38,8 @@ class RosterController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'user_id' => ['required', Rule::exists('users', 'id')],
-            'shift_id' => ['required', 'exists:shifts,id'],
+            'user_id' => ['required', Rule::exists('users', 'id')->where('hotel_id', Hotel::current()->id)],
+            'shift_id' => ['required', Rule::exists('shifts', 'id')->where('hotel_id', Hotel::current()->id)],
             'date_from' => ['required', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ], [], ['user_id' => 'pegawai', 'shift_id' => 'shift', 'date_from' => 'tanggal mulai', 'date_to' => 'tanggal akhir']);

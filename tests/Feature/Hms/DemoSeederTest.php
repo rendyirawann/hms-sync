@@ -34,6 +34,7 @@ class DemoSeederTest extends HmsTestCase
 
         Notification::assertNothingSent();
 
-        $this->actingAs($this->user('Superadmin'))->get(route('hms.reports.index'))->assertOk();
+        $this->actingAs($this->superadminIn())->get(route('hms.reports.index'))->assertOk();
+        $this->actingAs($this->user('Superadmin'))->get(route('platform.settlements.index'))->assertOk();
     }
 }

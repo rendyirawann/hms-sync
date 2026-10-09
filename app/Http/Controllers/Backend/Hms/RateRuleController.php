@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PromoCode;
 use App\Models\RateRule;
 use App\Models\RoomType;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -49,7 +50,7 @@ class RateRuleController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'room_type_id' => ['nullable', 'exists:room_types,id'],
+            'room_type_id' => ['nullable', Rule::exists('room_types', 'id')->where('hotel_id', Hotel::current()->id)],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'days_of_week' => ['nullable', 'array'],

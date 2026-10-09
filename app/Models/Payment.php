@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToHotel;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
+    use BelongsToHotel;
+
     protected $fillable = [
-        'booking_id', 'method', 'channel', 'amount', 'status', 'reference', 'merchant_ref', 'checkout_url',
+        'hotel_id', 'booking_id', 'method', 'channel', 'amount', 'status', 'reference', 'merchant_ref', 'checkout_url',
         'proof_path', 'payload', 'paid_at', 'expires_at', 'verified_by', 'note',
     ];
 
@@ -58,5 +61,11 @@ class Payment extends Model
             'pending' => 'warning',
             default => 'danger',
         };
+    }
+
+    /** hotel_id follows the parent booking. */
+    protected function resolveHotelId(): ?int
+    {
+        return $this->booking_id ? Booking::withoutGlobalScopes()->whereKey($this->booking_id)->value('hotel_id') : null;
     }
 }

@@ -4,14 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', ($hotel->name ?? 'HMS') . ' - Reservasi Kamar')</title>
+    <title>@yield('title', $brand['name'] . ' - Pesan Hotel')</title>
     
-    <link rel="shortcut icon" href="{{ asset('assets/media/logos/favicon.ico') }}" />
+    <link rel="icon" href="{{ $brand['favicon_url'] }}" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $brand['favicon_png_url'] }}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $brand['apple_icon_url'] }}" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     @vite('resources/css/app.css')
+    <link rel="stylesheet" href="{{ asset('assets/css/hms-motion.css') }}">
 
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }

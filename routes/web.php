@@ -22,10 +22,14 @@ use App\Http\Controllers\Backend\Settings\SettingController;
 
 // Hotel management
 use App\Http\Controllers\Backend\Hms\BookingController;
+use App\Http\Controllers\Backend\Platform\HotelController as PlatformHotelController;
+use App\Http\Controllers\Backend\Platform\PlatformSettingController;
+use App\Http\Controllers\Backend\Platform\SettlementController;
+use App\Http\Controllers\PartnerRegistrationController;
 use App\Http\Controllers\Backend\Hms\CalendarController;
 use App\Http\Controllers\Backend\Hms\GalleryController;
 use App\Http\Controllers\Backend\Hms\HousekeepingController;
-use App\Http\Controllers\Backend\Hms\PaymentController;
+use App\Http\Controllers\Backend\Platform\PaymentController;
 use App\Http\Controllers\Backend\Hms\PromoCodeController;
 use App\Http\Controllers\Backend\Hms\RateRuleController;
 use App\Http\Controllers\Backend\Hms\ReportController;
@@ -56,8 +60,15 @@ use App\Http\Controllers\FrontendController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [FrontendController::class, 'index'])->name('landing');
-Route::get('/kamar', [FrontendController::class, 'search'])->name('rooms.search');
-Route::get('/kamar/{roomType}', [FrontendController::class, 'roomType'])->name('rooms.show');
+Route::get('/cari', [FrontendController::class, 'search'])->name('rooms.search');
+Route::get('/hotel/{hotel:slug}', [FrontendController::class, 'hotel'])->name('hotels.show');
+Route::get('/hotel/{hotel:slug}/kamar/{roomType}', [FrontendController::class, 'roomType'])->scopeBindings()->name('rooms.show');
+
+// Hotel owners join the marketplace (approved by the platform before going live).
+Route::middleware('guest')->group(function () {
+    Route::get('/mitra/daftar', [PartnerRegistrationController::class, 'create'])->name('partner.register');
+    Route::post('/mitra/daftar', [PartnerRegistrationController::class, 'store'])->middleware('throttle:password');
+});
 
 // Tripay server-to-server callback (signature-verified, CSRF exempt).
 Route::post('/payment/tripay/callback', TripayCallbackController::class)
@@ -86,10 +97,39 @@ Route::middleware(['auth', 'verified', 'forbid-banned-user', 'role:Customer'])->
 | Admin panel — hotel staff only (customers are kept out by role)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|admin|Pegawai'])->group(function () {
+Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|admin|Pegawai', 'hotel'])->group(function () {
+
+    // --- Platform (marketplace operator): hotels, approval, money ---
+    Route::middleware('role:Superadmin')->prefix('admin/platform')->name('platform.')->group(function () {
+        Route::get('hotels', [PlatformHotelController::class, 'index'])->name('hotels.index');
+        Route::get('hotels/{hotel}', [PlatformHotelController::class, 'show'])->name('hotels.show');
+        Route::post('hotels', [PlatformHotelController::class, 'store'])->name('hotels.store');
+        Route::put('hotels/{hotel}', [PlatformHotelController::class, 'update'])->name('hotels.update');
+        Route::post('hotels/{hotel}/approve', [PlatformHotelController::class, 'approve'])->name('hotels.approve');
+        Route::post('hotels/{hotel}/reject', [PlatformHotelController::class, 'reject'])->name('hotels.reject');
+        Route::post('hotels/{hotel}/toggle', [PlatformHotelController::class, 'toggle'])->name('hotels.toggle');
+        Route::post('hotels/{hotel}/enter', [PlatformHotelController::class, 'enter'])->name('hotels.enter');
+        Route::post('leave-hotel', [PlatformHotelController::class, 'leave'])->name('hotels.leave');
+
+        Route::get('settlements', [SettlementController::class, 'index'])->name('settlements.index');
+        Route::post('settlements', [SettlementController::class, 'store'])->name('settlements.store');
+        Route::get('settlements/{settlement}', [SettlementController::class, 'show'])->name('settlements.show');
+        Route::post('settlements/{settlement}/paid', [SettlementController::class, 'markPaid'])->name('settlements.paid');
+
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/{payment}/proof', [PaymentController::class, 'proof'])->name('payments.proof');
+        Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
+        Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+
+        Route::get('settings', [PlatformSettingController::class, 'edit'])->name('settings.edit');
+        Route::put('settings', [PlatformSettingController::class, 'update'])->name('settings.update');
+    });
+
+    // --- Hotel finance (read-only for the hotel) ---
+    Route::middleware(['hotel:required', 'can:hms.reports'])->get('/admin/hms/settlements', [SettlementController::class, 'hotelIndex'])->name('hms.settlements.index');
 
     // --- HMS: master data ---
-    Route::middleware('can:hms.master')->prefix('admin/hms')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.master'])->prefix('admin/hms')->group(function () {
         Route::get('hotel', [HotelController::class, 'edit'])->name('hms.hotel.edit');
         Route::put('hotel', [HotelController::class, 'update'])->middleware('throttle:write')->name('hms.hotel.update');
 
@@ -121,13 +161,13 @@ Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|adm
     });
 
     // --- HMS: reports ---
-    Route::middleware('can:hms.reports')->prefix('admin/hms/reports')->name('hms.reports.')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.reports'])->prefix('admin/hms/reports')->name('hms.reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('shifts', [ReportController::class, 'shifts'])->name('shifts');
     });
 
     // --- HMS: housekeeping ---
-    Route::middleware('can:hms.housekeeping')->prefix('admin/hms/housekeeping')->name('hms.housekeeping.')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.housekeeping'])->prefix('admin/hms/housekeeping')->name('hms.housekeeping.')->group(function () {
         Route::get('/', [HousekeepingController::class, 'index'])->name('index');
         Route::post('/', [HousekeepingController::class, 'store'])->name('store');
         Route::post('{task}/assign', [HousekeepingController::class, 'assign'])->name('assign');
@@ -136,27 +176,24 @@ Route::middleware(['auth', 'forbid-banned-user', 'role:Superadmin|superadmin|adm
     });
 
     // --- HMS: shift roster ---
-    Route::middleware('can:hms.roster')->prefix('admin/hms')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.roster'])->prefix('admin/hms')->group(function () {
         Route::get('roster', [RosterController::class, 'index'])->name('hms.roster.index');
         Route::post('roster', [RosterController::class, 'store'])->name('hms.roster.store');
         Route::delete('roster/{employeeShift}', [RosterController::class, 'destroy'])->name('hms.roster.destroy');
     });
 
     // --- HMS: my shift (clock in / out) ---
-    Route::middleware('can:hms.my_shift')->prefix('admin/hms')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.my_shift'])->prefix('admin/hms')->group(function () {
         Route::get('my-shift', [MyShiftController::class, 'index'])->name('hms.my-shift.index');
         Route::post('my-shift/{employeeShift}/start', [MyShiftController::class, 'start'])->name('hms.my-shift.start');
         Route::post('my-shift/{employeeShift}/finish', [MyShiftController::class, 'finish'])->name('hms.my-shift.finish');
     });
 
     // --- HMS: bookings & front desk ---
-    Route::middleware('can:hms.booking')->prefix('admin/hms/bookings')->name('hms.bookings.')->group(function () {
+    Route::middleware(['hotel:required', 'can:hms.booking'])->prefix('admin/hms/bookings')->name('hms.bookings.')->group(function () {
         Route::get('/', [BookingController::class, 'index'])->name('index');
         Route::post('/', [BookingController::class, 'store'])->name('store');
         Route::get('calendar', [CalendarController::class, 'index'])->name('calendar');
-        Route::get('payments/{payment}/proof', [PaymentController::class, 'proof'])->name('payments.proof');
-        Route::post('payments/{payment}/verify', [PaymentController::class, 'verify'])->name('payments.verify');
-        Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
         Route::get('{booking}', [BookingController::class, 'show'])->name('show');
         Route::get('{booking}/invoice', [BookingController::class, 'invoice'])->name('invoice');
         Route::post('{booking}/extend', [BookingController::class, 'extend'])->name('extend');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\Hms\Concerns\RespondsWithAlert;
 use App\Http\Controllers\Controller;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\Hotel;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -76,8 +77,8 @@ class RoomController extends Controller
     private function validated(Request $request, ?Room $room = null): array
     {
         return $request->validate([
-            'room_type_id' => ['required', 'exists:room_types,id'],
-            'room_number' => ['required', 'string', 'max:20', Rule::unique('rooms')->ignore($room?->id)],
+            'room_type_id' => ['required', Rule::exists('room_types', 'id')->where('hotel_id', Hotel::current()->id)],
+            'room_number' => ['required', 'string', 'max:20', Rule::unique('rooms')->where('hotel_id', Hotel::current()->id)->ignore($room?->id)],
             'floor' => ['nullable', 'string', 'max:10'],
             'status' => ['required', Rule::in(Room::STATUSES)],
             'lock_id' => ['nullable', 'string', 'max:50', Rule::unique('rooms')->ignore($room?->id)],

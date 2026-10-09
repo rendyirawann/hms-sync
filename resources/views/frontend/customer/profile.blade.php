@@ -1,5 +1,5 @@
 @extends('frontend.layout')
-@section('title', 'Profil Saya - ' . $hotel->name)
+@section('title', 'Profil Saya - ' . $brand['name'])
 
 @section('content')
     <h1 class="text-2xl font-extrabold text-slate-800 mb-8">Profil Saya</h1>

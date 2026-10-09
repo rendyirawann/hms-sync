@@ -103,15 +103,18 @@
                 </div>
             </div>
             <div class="d-flex gap-2">
-                @if ($payment->proof_path)
-                    <a href="{{ route('hms.bookings.payments.proof', $payment) }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">Lihat bukti</a>
+                @if ($payment->proof_path && auth()->user()->hasRole('Superadmin'))
+                    <a href="{{ route('platform.payments.proof', $payment) }}" target="_blank" rel="noopener" class="btn btn-sm btn-light">Lihat bukti</a>
                 @endif
-                @if ($payment->method === 'transfer' && $payment->status === 'pending')
-                    <form method="POST" action="{{ route('hms.bookings.payments.verify', $payment) }}" data-ajax data-ajax-confirm="Nominal di bukti transfer sudah sesuai?" data-confirm-icon="question" data-confirm-ok="Ya, terima">
+                @if ($payment->method === 'transfer' && $payment->status === 'pending' && ! auth()->user()->hasRole('Superadmin'))
+                    <span class="badge badge-light-warning">Menunggu verifikasi platform</span>
+                @endif
+                @if ($payment->method === 'transfer' && $payment->status === 'pending' && auth()->user()->hasRole('Superadmin'))
+                    <form method="POST" action="{{ route('platform.payments.verify', $payment) }}" data-ajax data-ajax-confirm="Nominal di bukti transfer sudah sesuai?" data-confirm-icon="question" data-confirm-ok="Ya, terima">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-success">Terima</button>
                     </form>
-                    <form method="POST" action="{{ route('hms.bookings.payments.reject', $payment) }}" data-ajax data-ajax-confirm="Tolak bukti transfer ini?">
+                    <form method="POST" action="{{ route('platform.payments.reject', $payment) }}" data-ajax data-ajax-confirm="Tolak bukti transfer ini?">
                         @csrf
                         <button type="submit" class="btn btn-sm btn-light-danger">Tolak</button>
                     </form>
@@ -164,8 +167,10 @@
         <div class="col-md-4">
             <label class="form-label">Metode</label>
             <select name="method" class="form-select form-select-solid">
-                <option value="cash">Tunai / EDC</option>
-                <option value="transfer">Transfer (sudah dicek)</option>
+                <option value="cash">Tunai / EDC (diterima hotel)</option>
+                @role('Superadmin')
+                    <option value="transfer">Transfer ke rekening platform (sudah dicek)</option>
+                @endrole
             </select>
         </div>
         <div class="col-md-4">

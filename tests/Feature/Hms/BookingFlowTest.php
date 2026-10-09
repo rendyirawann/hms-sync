@@ -22,13 +22,18 @@ class BookingFlowTest extends HmsTestCase
 
     public function test_public_pages_render(): void
     {
-        $this->get('/')->assertOk()->assertSee('Deluxe');
-        $this->get(route('rooms.show', $this->type))->assertOk();
+        $this->get('/')->assertOk()->assertSee('Hotel Uji');
         $this->get(route('rooms.search', [
             'check_in' => today()->addDay()->toDateString(),
             'check_out' => today()->addDays(3)->toDateString(),
             'guests' => 2,
-        ]))->assertOk()->assertSee('Pesan Sekarang');
+        ]))->assertOk()->assertSee('Hotel Uji')->assertSee('Lihat kamar');
+        $this->get(route('hotels.show', [
+            'hotel' => $this->hotel,
+            'check_in' => today()->addDay()->toDateString(),
+            'check_out' => today()->addDays(3)->toDateString(),
+        ]))->assertOk()->assertSee('Deluxe')->assertSee('Pesan Sekarang');
+        $this->get(route('rooms.show', [$this->hotel, $this->type]))->assertOk();
     }
 
     public function test_booking_prices_with_service_and_tax(): void
@@ -59,7 +64,7 @@ class BookingFlowTest extends HmsTestCase
     public function test_weekend_rate_rule_and_promo_are_applied(): void
     {
         $friday = today()->next('Friday');
-        RateRule::create(['name' => 'Weekend', 'days_of_week' => [5, 6], 'adjust_type' => 'percent', 'value' => 20, 'is_active' => true]);
+        RateRule::create(['hotel_id' => $this->hotel->id, 'name' => 'Weekend', 'days_of_week' => [5, 6], 'adjust_type' => 'percent', 'value' => 20, 'is_active' => true]);
         PromoCode::create(['code' => 'hemat10', 'type' => 'percent', 'value' => 10, 'is_active' => true]);
 
         $this->book($this->user('Customer'), [

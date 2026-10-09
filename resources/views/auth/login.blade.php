@@ -40,7 +40,7 @@
 
         {{-- Brand block — only shown when the story panel is hidden (mobile). --}}
         <div class="auth-card__brand">
-            <img src="{{ $brand['logo_url'] }}" alt="" width="56" height="56" />
+            <img src="{{ $brand['logo_url'] }}" alt="" class="hms-logo" width="56" height="56" />
             <div>
                 <div class="auth-card__title mb-0">{{ $brand['name'] }}</div>
                 <div class="auth-card__subtitle mb-0">{{ $brand['tagline'] }}</div>
@@ -120,7 +120,7 @@
                 <span class="auth-hint">Tetap masuk di perangkat ini</span>
             </div>
 
-            <button type="submit" class="auth-submit" data-auth-submit data-label-idle="Masuk">
+            <button type="submit" class="auth-submit hms-btn" data-auth-submit data-label-idle="Masuk">
                 <span class="auth-submit__spinner" aria-hidden="true"></span>
                 <span data-label>Masuk</span>
             </button>

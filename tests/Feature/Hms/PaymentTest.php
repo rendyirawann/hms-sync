@@ -35,7 +35,7 @@ class PaymentTest extends HmsTestCase
         $this->booking = Booking::firstOrFail();
     }
 
-    public function test_manual_transfer_proof_is_verified_by_staff(): void
+    public function test_manual_transfer_proof_is_verified_by_platform(): void
     {
         Storage::fake('local');
 
@@ -46,12 +46,15 @@ class PaymentTest extends HmsTestCase
         $payment = Payment::firstOrFail();
         Storage::disk('local')->assertExists($payment->proof_path);
 
-        // Only staff can open the receipt.
-        $this->actingAs($this->guest)->get(route('hms.bookings.payments.proof', $payment))->assertForbidden();
-        $staff = $this->user('admin');
-        $this->actingAs($staff)->get(route('hms.bookings.payments.proof', $payment))->assertOk();
+        // Money lands in the platform's account: only the platform opens and verifies it.
+        $this->actingAs($this->guest)->get(route('platform.payments.proof', $payment))->assertForbidden();
+        $this->actingAs($this->user('admin'))->get(route('platform.payments.proof', $payment))->assertForbidden();
+        $this->actingAs($this->user('admin'))->ajax()->post(route('platform.payments.verify', $payment))->assertForbidden();
 
-        $this->actingAs($staff)->ajax()->post(route('hms.bookings.payments.verify', $payment))->assertOk();
+        $platform = $this->user('Superadmin');
+        $this->actingAs($platform)->get(route('platform.payments.index'))->assertOk()->assertSee($this->booking->booking_code);
+        $this->actingAs($platform)->get(route('platform.payments.proof', $payment))->assertOk();
+        $this->actingAs($platform)->ajax()->post(route('platform.payments.verify', $payment))->assertOk();
         $this->assertSame('paid', $payment->fresh()->status);
         $this->assertSame('Paid', $this->booking->fresh()->status);
     }

@@ -11,7 +11,7 @@ class ShiftAndAdminPagesTest extends HmsTestCase
     {
         $admin = $this->user('admin');
         $staff = $this->user('Pegawai');
-        $shift = Shift::create(['name' => 'Pagi', 'start_time' => '07:00', 'end_time' => '15:00']);
+        $shift = Shift::create(['hotel_id' => $this->hotel->id, 'name' => 'Pagi', 'start_time' => '07:00', 'end_time' => '15:00']);
 
         $this->actingAs($admin)->ajax()->post(route('hms.roster.store'), [
             'user_id' => $staff->id, 'shift_id' => $shift->id, 'date_from' => today()->toDateString(),
@@ -31,7 +31,7 @@ class ShiftAndAdminPagesTest extends HmsTestCase
     public function test_clock_in_respects_ip_and_geofence(): void
     {
         $staff = $this->user('Pegawai');
-        $shift = Shift::create(['name' => 'Pagi', 'start_time' => '07:00', 'end_time' => '15:00']);
+        $shift = Shift::create(['hotel_id' => $this->hotel->id, 'name' => 'Pagi', 'start_time' => '07:00', 'end_time' => '15:00']);
         $entry = EmployeeShift::create(['user_id' => $staff->id, 'shift_id' => $shift->id, 'date' => today(), 'status' => 'Pending']);
 
         $this->hotel->update(['clock_in_ips' => '10.0.0.0/8']);
@@ -46,9 +46,11 @@ class ShiftAndAdminPagesTest extends HmsTestCase
 
     public function test_every_admin_page_renders_for_superadmin(): void
     {
-        $super = $this->user('Superadmin');
+        $super = $this->superadminIn();
 
         foreach ([
+            'platform.hotels.index', 'platform.payments.index', 'platform.settlements.index', 'platform.settings.edit',
+            'hms.settlements.index',
             'dashboard', 'hms.hotel.edit', 'hms.room-types.index', 'hms.rooms.index', 'hms.staff.index', 'hms.shifts.index',
             'hms.pricing.index', 'hms.gallery.index', 'hms.reviews.index', 'hms.roster.index', 'hms.my-shift.index',
             'hms.bookings.index', 'hms.bookings.calendar', 'hms.housekeeping.index', 'hms.reports.index', 'hms.reports.shifts',
@@ -74,7 +76,7 @@ class ShiftAndAdminPagesTest extends HmsTestCase
             ->assertStatus(422)->assertJsonValidationErrors('code');
 
         $this->actingAs($admin)->ajax()->put(route('hms.hotel.update'), [
-            'name' => 'Hotel Baru', 'address' => 'Jl. Baru', 'check_in_time' => '14:00', 'check_out_time' => '12:00',
+            'name' => 'Hotel Baru', 'city' => 'Bandung', 'address' => 'Jl. Baru', 'check_in_time' => '14:00', 'check_out_time' => '12:00',
             'tax_percent' => 11, 'service_percent' => 10, 'payment_deadline_hours' => 12, 'late_grace_minutes' => 5,
         ])->assertOk();
         $this->assertSame('Hotel Baru', $this->hotel->fresh()->name);

@@ -268,16 +268,19 @@
     window.addEventListener('echo:ready', function () {
         var channels = (document.body.getAttribute('data-hms-channels') || '').split(',').filter(Boolean);
 
-        if (channels.indexOf('frontdesk') !== -1) {
-            window.Echo.private('hms.frontdesk').listen('.booking.updated', function (e) {
+        var frontdesk = channels.filter(function (c) { return /\.frontdesk$/.test(c); })[0];
+        var housekeeping = channels.filter(function (c) { return /\.housekeeping$/.test(c); })[0];
+
+        if (frontdesk) {
+            window.Echo.private(frontdesk).listen('.booking.updated', function (e) {
                 var important = ['created', 'proof_uploaded', 'paid'].indexOf(e.action) !== -1;
                 toast(e.message + (e.guest ? ' — ' + e.guest : ''), important ? 'success' : 'info');
                 scheduleReload('booking');
             });
         }
 
-        if (channels.indexOf('housekeeping') !== -1) {
-            window.Echo.private('hms.housekeeping').listen('.room.updated', function (e) {
+        if (housekeeping) {
+            window.Echo.private(housekeeping).listen('.room.updated', function (e) {
                 if (document.querySelector('[data-live-reload*="room"]')) {
                     toast(e.message, 'info');
                 }

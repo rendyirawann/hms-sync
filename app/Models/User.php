@@ -39,6 +39,7 @@ class User extends Authenticatable implements BannableContract, MustVerifyEmail
         'password',
         'social_id',
         'social_type',
+        'hotel_id',
     ];
 
     /**
@@ -146,6 +147,12 @@ class User extends Authenticatable implements BannableContract, MustVerifyEmail
 
             $user->username = $candidate;
         });
+    }
+
+    /** Hotel staff (admin / Pegawai) work for exactly one hotel. */
+    public function hotel()
+    {
+        return $this->belongsTo(Hotel::class);
     }
 
     public function bookings()

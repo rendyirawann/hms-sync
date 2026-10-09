@@ -12,7 +12,7 @@ class ProfileController extends Controller
 {
     public function edit(Request $request)
     {
-        return view('frontend.customer.profile', ['user' => $request->user(), 'hotel' => Hotel::current()]);
+        return view('frontend.customer.profile', ['user' => $request->user()]);
     }
 
     public function update(Request $request)
