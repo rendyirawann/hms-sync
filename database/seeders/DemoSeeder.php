@@ -85,6 +85,9 @@ class DemoSeeder extends Seeder
             $user->syncRoles([$role]);
         }
 
+        // Bookings, stays, payments, reviews, housekeeping and roster.
+        $this->call(DemoOperationsSeeder::class);
+
         $this->command?->info('Demo data siap. Akun demo (password: Password123!): admin@nusantara.test, rina@nusantara.test, budi@tamu.test');
     }
 }

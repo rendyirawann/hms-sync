@@ -170,7 +170,28 @@ php artisan schedule:work       # terminal lain: expire booking, no-show, backup
 - Website tamu: `http://127.0.0.1:8000`
 - Panel admin: `http://127.0.0.1:8000/admin/login` (email dari `SUPERADMIN_EMAIL`; password dari `SUPERADMIN_PASSWORD` atau dicetak sekali saat seeding)
 
-Setelah login sebagai admin, isi data awal secara berurutan:
+### Data percontohan (demo)
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+Isi data demo:
+- Hotel contoh, 3 tipe kamar, dan 9 kamar.
+- Aturan harga weekend dan promo `HEMAT10`.
+- 115 booking selama 60 hari terakhir sampai 21 hari ke depan, mencakup semua status: tamu sedang menginap, kedatangan hari ini, menunggu bayar, batal, dan no-show.
+- Pembayaran (Tripay, transfer, dan tunai), ulasan, tugas housekeeping, serta jadwal shift dua pegawai.
+
+Seeder bisa dijalankan ulang: data demo lama (kode `DMO-…`) diganti. **Jangan dijalankan di database produksi.**
+
+| Akun (password `Password123!`) | Peran |
+|---|---|
+| `admin@nusantara.test` | admin hotel |
+| `rina@nusantara.test` | pegawai front desk |
+| `dedi@nusantara.test` | pegawai housekeeping |
+| `budi@tamu.test`, `tamu1…tamu12@tamu.test` | tamu |
+
+Setelah login sebagai admin di database asli, isi data awal secara berurutan:
 1. **Data Master → Profil Hotel**
 2. **Tipe Kamar**
 3. **Kamar**
