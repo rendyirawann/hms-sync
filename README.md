@@ -339,3 +339,5 @@ Konvensi UI admin (lihat [WORKFLOW.md](WORKFLOW.md)):
 ## Deploy ke server
 
 Panduan lengkap (Nginx, PHP-FPM atau Octane, Supervisor, cron, Redis, Reverb, HTTPS, backup, dan checklist go-live) ada di **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
+
+Memasang di **subdomain pada server yang sudah berisi project lain** (port, Redis, cookie, dan Supervisor terisolasi): **[docs/DEPLOY-SUBDOMAIN.md](docs/DEPLOY-SUBDOMAIN.md)**.
